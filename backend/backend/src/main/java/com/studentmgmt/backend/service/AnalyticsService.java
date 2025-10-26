@@ -176,9 +176,10 @@ public class AnalyticsService {
     }
 
     // Helper method: Làm tròn số
-    private Double round(double value) {
+    private double round(double value) {
         return BigDecimal.valueOf(value)
                 .setScale(2, RoundingMode.HALF_UP)
                 .doubleValue();
     }
+
 }

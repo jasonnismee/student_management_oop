@@ -1,6 +1,11 @@
 package com.studentmgmt.backend.repository;
 
-import com.studentmgmt.backend.model.Grade;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -8,11 +13,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Optional;
+import com.studentmgmt.backend.model.Grade;
 
 @Repository
 public class GradeRepository {
@@ -75,7 +76,11 @@ public class GradeRepository {
                 ps.setLong(6, grade.getSubjectId());
                 return ps;
             }, keyHolder);
-            grade.setId(keyHolder.getKey().longValue());
+            Number key = keyHolder.getKey();
+            if (key == null) {
+                throw new IllegalStateException("Failed to retrieve generated key for grade insert");
+            }
+            grade.setId(key.longValue());
         } else {
             String sql = "UPDATE grades SET score1=?, score2=?, score3=?, score4=? WHERE id=?";
             jdbcTemplate.update(sql, grade.getScore1(), grade.getScore2(), grade.getScore3(), grade.getScore4(), grade.getId());

@@ -1,6 +1,10 @@
 package com.studentmgmt.backend.repository;
 
-import com.studentmgmt.backend.model.Semester;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -8,10 +12,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
+import com.studentmgmt.backend.model.Semester;
 
 @Repository
 public class SemesterRepository {
@@ -21,14 +22,15 @@ public class SemesterRepository {
 
     // ✅ Lấy tất cả học kỳ theo userId
     public List<Semester> findByUserId(Long userId) {
-        String sql = "SELECT * FROM semesters WHERE user_id = ? ORDER BY id DESC";
-        return jdbcTemplate.query(sql, new Object[]{userId}, new SemesterRowMapper());
+    String sql = "SELECT * FROM semesters WHERE user_id = ? ORDER BY id DESC";
+    return jdbcTemplate.query(sql, new SemesterRowMapper(), userId);
     }
+
 
     // ✅ Tìm học kỳ theo id (bổ sung để fix lỗi SubjectController)
     public Semester findById(Long id) {
         String sql = "SELECT * FROM semesters WHERE id = ?";
-        List<Semester> semesters = jdbcTemplate.query(sql, new Object[]{id}, new SemesterRowMapper());
+        List<Semester> semesters = jdbcTemplate.query(sql, new SemesterRowMapper(), id);
         return semesters.isEmpty() ? null : semesters.get(0);
     }
 
@@ -46,7 +48,11 @@ public class SemesterRepository {
             return ps;
         }, keyHolder);
 
-        return keyHolder.getKey().longValue();
+        Number key = keyHolder.getKey();
+        if (key == null) {
+            throw new IllegalStateException("Failed to retrieve generated key for semester insert");
+        }
+        return key.longValue();
     }
 
     // ✅ Kiểm tra học kỳ thuộc user không

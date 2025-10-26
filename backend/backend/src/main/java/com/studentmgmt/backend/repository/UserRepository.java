@@ -1,10 +1,12 @@
 package com.studentmgmt.backend.repository;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -12,7 +14,6 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import com.studentmgmt.backend.model.User;
-import java.sql.PreparedStatement;
 
 @Repository
 public class UserRepository {
@@ -47,19 +48,25 @@ public class UserRepository {
             ps.setObject(4, LocalDateTime.now());
             return ps;
         }, keyHolder);
-
-        return keyHolder.getKey().longValue();
+    Number key = keyHolder.getKey();
+    if (key == null) {
+        throw new IllegalStateException("Failed to retrieve generated key for user insert");
+        }
+        return key.longValue();
     }
 
     // ✅ Tìm user theo studentId
     public User findByStudentId(String studentId) {
-        String sql = "SELECT * FROM users WHERE student_id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, new Object[]{studentId}, new UserRowMapper());
-        } catch (Exception e) {
-            return null;
-        }
+    String sql = "SELECT * FROM users WHERE student_id = ?";
+    try {
+        return jdbcTemplate.query(sql, new UserRowMapper(), studentId)
+                .stream()
+                .findFirst()
+                .orElse(null);
+    } catch (DataAccessException e) {
+        return null;
     }
+}
 
     // ✅ RowMapper
     private static class UserRowMapper implements RowMapper<User> {

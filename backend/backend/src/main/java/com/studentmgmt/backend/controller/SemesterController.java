@@ -6,7 +6,15 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.studentmgmt.backend.model.Semester;
 import com.studentmgmt.backend.repository.SemesterRepository;
@@ -47,9 +55,12 @@ public class SemesterController {
             Long userId = null;
             try {
                 Object val = request.get("userId");
-                if (val instanceof Integer) userId = ((Integer) val).longValue();
-                else if (val instanceof Long) userId = (Long) val;
-                else if (val instanceof String) userId = Long.parseLong((String) val);
+                if (val instanceof Integer i)
+                    userId = i.longValue();
+                else if (val instanceof Long l)
+                    userId = l;
+                else if (val instanceof String s)
+                    userId = Long.valueOf(s);
             } catch (NumberFormatException e) {
                 return ResponseEntity.badRequest().body(Map.of("message", "UserId không hợp lệ"));
             }
