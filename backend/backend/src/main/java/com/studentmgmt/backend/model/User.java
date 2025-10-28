@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public class User {
     private Long id;
     private String studentId;
+    private String email;       // ✅ thêm trường này
     private String password;
     private String fullName;
     private LocalDateTime createdAt;
@@ -21,6 +22,13 @@ public class User {
     }
     public void setStudentId(String studentId) {
         this.studentId = studentId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPassword() {
