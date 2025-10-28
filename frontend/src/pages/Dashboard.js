@@ -3,7 +3,7 @@ import { semesterAPI } from '../services/api';
 import SubjectManagement from './SubjectManagement';
 import GradeManagement from './GradeManagement';
 import AnalyticsDashboard from './AnalyticsDashboard';
-import DocumentManagement from './DocumentManagement'; // <--- THÊM IMPORT DOCUMENT MANAGEMENT
+import DocumentManagement from './DocumentManagement';
 
 const Dashboard = ({ currentUser }) => {
   const [semesters, setSemesters] = useState([]);
@@ -11,12 +11,11 @@ const Dashboard = ({ currentUser }) => {
   const [formData, setFormData] = useState({
     name: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
   });
-  // KHAI BÁO MODULE MỚI: 'documents'
-  const [currentModule, setCurrentModule] = useState('semesters'); 
+  const [currentModule, setCurrentModule] = useState('semesters');
+  const [refreshAnalytics, setRefreshAnalytics] = useState(0); // 🆕 THÊM DÒNG NÀY
 
-  // Sửa: Dùng useCallback
   const loadSemesters = useCallback(async () => {
     try {
       const response = await semesterAPI.getSemesters(currentUser.userId);
@@ -26,7 +25,6 @@ const Dashboard = ({ currentUser }) => {
     }
   }, [currentUser.userId]);
 
-  // Load danh sách học kỳ khi component mount
   useEffect(() => {
     if (currentUser && currentUser.userId) {
       loadSemesters();
@@ -35,36 +33,21 @@ const Dashboard = ({ currentUser }) => {
 
   const handleCreateSemester = async (e) => {
     e.preventDefault();
-    
-    console.log('Current user:', currentUser);
-    
     if (!currentUser?.userId) {
-      alert('Lỗi: Không tìm thấy userId. Vui lòng đăng nhập lại.');
+      alert('Không tìm thấy userId. Vui lòng đăng nhập lại.');
       return;
     }
-    
     try {
-      const semesterData = {
-        name: formData.name,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        userId: currentUser.userId
-      };
-      
-      console.log('Sending semester data:', semesterData);
-      
-      const response = await semesterAPI.createSemester(semesterData);
-      console.log('Create semester response:', response.data);
-      
+      await semesterAPI.createSemester({
+        ...formData,
+        userId: currentUser.userId,
+      });
       setShowForm(false);
       setFormData({ name: '', startDate: '', endDate: '' });
       loadSemesters();
       alert('Tạo học kỳ thành công!');
     } catch (error) {
-      console.error('Full error:', error);
-      console.error('Error response:', error.response?.data);
-      alert('Lỗi khi tạo học kỳ: ' + 
-        (error.response?.data?.message || error.message || 'Unknown error'));
+      alert('Lỗi khi tạo học kỳ: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -75,222 +58,188 @@ const Dashboard = ({ currentUser }) => {
         loadSemesters();
         alert('Xóa học kỳ thành công!');
       } catch (error) {
-        alert('Lỗi khi xóa học kỳ: ' + error.response?.data?.message);
+        alert('Lỗi khi xóa học kỳ: ' + (error.response?.data?.message || error.message));
       }
     }
   };
 
-  // Render module quản lý học kỳ
+  // 🆕 Hàm để refresh analytics khi có thay đổi điểm
+  const handleGradeChange = () => {
+    console.log('Grade changed - refreshing analytics...');
+    setRefreshAnalytics(prev => prev + 1);
+  };
+
+  // 🧩 Quản lý học kỳ - GIỮ NGUYÊN NHƯ CŨ
   const renderSemesterManagement = () => (
     <div>
       <h2>Quản Lý Học Kỳ</h2>
-      <p>Xin chào, {currentUser?.fullName} ({currentUser?.studentId})</p>
-      
-      <button 
+      <button
         onClick={() => setShowForm(!showForm)}
-        style={{ marginBottom: '20px', padding: '10px 15px', backgroundColor: '#007bff', color: 'white' }}
+        style={{
+          marginBottom: '20px',
+          padding: '10px 15px',
+          backgroundColor: '#007bff',
+          color: 'white',
+        }}
       >
         {showForm ? 'Hủy' : '+ Thêm Học Kỳ Mới'}
       </button>
 
-      {/* Form thêm học kỳ */}
       {showForm && (
-        <form onSubmit={handleCreateSemester} style={{ 
-          border: '1px solid #ddd', 
-          padding: '20px', 
-          marginBottom: '20px',
-          borderRadius: '5px' 
-        }}>
-          <h3>Thêm Học Kỳ Mới</h3>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="text"
-              placeholder="Tên học kỳ (VD: Học kỳ 1 - 2024)"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              style={{ width: '100%', padding: '8px' }}
-              required
-            />
-          </div>
-          <div style={{ marginBottom: '10px' }}>
-            <label>Ngày bắt đầu: </label>
-            <input
-              type="date"
-              value={formData.startDate}
-              onChange={(e) => setFormData({...formData, startDate: e.target.value})}
-              style={{ padding: '8px', marginLeft: '10px' }}
-            />
-          </div>
-          <div style={{ marginBottom: '10px' }}>
-            <label>Ngày kết thúc: </label>
-            <input
-              type="date"
-              value={formData.endDate}
-              onChange={(e) => setFormData({...formData, endDate: e.target.value})}
-              style={{ padding: '8px', marginLeft: '10px' }}
-            />
-          </div>
-          <button type="submit" style={{ padding: '8px 15px', backgroundColor: '#28a745', color: 'white' }}>
+        <form
+          onSubmit={handleCreateSemester}
+          style={{
+            border: '1px solid #ddd',
+            padding: '20px',
+            borderRadius: '5px',
+            marginBottom: '20px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '10px',
+            alignItems: 'center',
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Tên học kỳ (VD: Học kỳ 1 - 2024)"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+            style={{
+              flex: '1 1 250px',
+              padding: '8px',
+              borderRadius: '5px',
+              border: '1px solid #ccc',
+            }}
+          />
+          <input
+            type="date"
+            value={formData.startDate}
+            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+            style={{
+              flex: '1 1 120px',
+              padding: '8px',
+              borderRadius: '5px',
+              border: '1px solid #ccc',
+            }}
+          />
+          <input
+            type="date"
+            value={formData.endDate}
+            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            style={{
+              flex: '1 1 120px',
+              padding: '8px',
+              borderRadius: '5px',
+              border: '1px solid #ccc',
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+            }}
+          >
             Tạo Học Kỳ
           </button>
         </form>
       )}
 
-      {/* Danh sách học kỳ - SỬA: BỎ CÁC NÚT THỪA, CHỈ GIỮ XÓA */}
-      <div>
-        <h3>Danh sách học kỳ của bạn:</h3>
-        {semesters.length === 0 ? (
-          <p>Chưa có học kỳ nào. Hãy tạo học kỳ đầu tiên!</p>
-        ) : (
-          <div>
-            {semesters.map(semester => (
-              <div key={semester.id} style={{
-                border: '1px solid #ddd',
-                padding: '15px',
-                marginBottom: '10px',
-                borderRadius: '5px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div>
-                  <h4>{semester.name}</h4>
-                  <p>Bắt đầu: {semester.startDate} | Kết thúc: {semester.endDate}</p>
-                </div>
-                <div>
-                  {/* CHỈ GIỮ LẠI NÚT XÓA, BỎ CÁC NÚT KHÁC */}
-                  <button 
-                    onClick={() => handleDeleteSemester(semester.id)}
-                    style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white' }}
-                  >
-                    Xóa
-                  </button>
-                </div>
-              </div>
-            ))}
+      <h3>Danh sách học kỳ của bạn:</h3>
+      {semesters.length === 0 ? (
+        <p>Chưa có học kỳ nào. Hãy tạo học kỳ đầu tiên!</p>
+      ) : (
+        semesters.map((s) => (
+          <div key={s.id} style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '6px', marginBottom: '10px' }}>
+            <h4>{s.name}</h4>
+            <p>Bắt đầu: {s.startDate} | Kết thúc: {s.endDate}</p>
+            <button
+              onClick={() => handleDeleteSemester(s.id)}
+              style={{ backgroundColor: '#dc3545', color: 'white', padding: '5px 10px' }}
+            >
+              Xóa
+            </button>
           </div>
-        )}
-      </div>
+        ))
+      )}
     </div>
   );
 
-  // Render module quản lý môn học
-  const renderSubjectManagement = () => (
-    <div>
-      <button 
-        onClick={() => setCurrentModule('semesters')}
-        style={{ marginBottom: '20px', padding: '8px 15px', backgroundColor: '#6c757d', color: 'white' }}
-      >
-        ← Quay lại Quản lý Học kỳ
-      </button>
-      <SubjectManagement currentUser={currentUser} />
-    </div>
-  );
-
-  // Render module quản lý điểm số
+  // 🧩 Các phần khác - CHỈ THÊM CALLBACK
+  const renderSubjectManagement = () => <SubjectManagement currentUser={currentUser} />;
+  
   const renderGradeManagement = () => (
-    <div>
-      <button 
-        onClick={() => setCurrentModule('semesters')}
-        style={{ marginBottom: '20px', padding: '8px 15px', backgroundColor: '#6c757d', color: 'white' }}
-      >
-        ← Quay lại Quản lý Học kỳ
-      </button>
-      <GradeManagement currentUser={currentUser} />
-    </div>
+    <GradeManagement 
+      currentUser={currentUser} 
+      onGradeChange={handleGradeChange} // 🆕 THÊM DÒNG NÀY
+    />
   );
   
-  // RENDER MODULE QUẢN LÝ TÀI LIỆU (TẠO MỚI)
-  const renderDocumentManagement = () => (
-    <div>
-      <DocumentManagement currentUser={currentUser} />
-    </div>
-  );
-
-  // Render module analytics
+  const renderDocumentManagement = () => <DocumentManagement currentUser={currentUser} />;
+  
   const renderAnalyticsDashboard = () => (
-    <div>
-      <button 
-        onClick={() => setCurrentModule('semesters')}
-        style={{ marginBottom: '20px', padding: '8px 15px', backgroundColor: '#6c757d', color: 'white' }}
-      >
-        ← Quay lại Quản lý Học kỳ
-      </button>
-      <AnalyticsDashboard currentUser={currentUser} />
-    </div>
+    <AnalyticsDashboard 
+      currentUser={currentUser} 
+      refreshTrigger={refreshAnalytics} // 🆕 THÊM DÒNG NÀY
+    />
   );
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
-      {/* Navigation - CÁC NÚT CHUYỂN MODULE CHÍNH */}
-      <div style={{ marginBottom: '20px', borderBottom: '1px solid #ddd', paddingBottom: '10px' }}>
-        <button 
-          onClick={() => setCurrentModule('semesters')}
-          style={{ 
-            padding: '10px 20px', 
-            backgroundColor: currentModule === 'semesters' ? '#007bff' : '#f8f9fa', 
-            color: currentModule === 'semesters' ? 'white' : 'black',
-            marginRight: '10px'
-          }}
-        >
-          Quản lý Học kỳ
-        </button>
-        <button 
-          onClick={() => setCurrentModule('subjects')}
-          style={{ 
-            padding: '10px 20px', 
-            backgroundColor: currentModule === 'subjects' ? '#007bff' : '#f8f9fa', 
-            color: currentModule === 'subjects' ? 'white' : 'black',
-            marginRight: '10px'
-          }}
-        >
-          Quản lý Môn học
-        </button>
-        <button 
-          onClick={() => setCurrentModule('grades')}
-          style={{ 
-            padding: '10px 20px', 
-            backgroundColor: currentModule === 'grades' ? '#007bff' : '#f8f9fa', 
-            color: currentModule === 'grades' ? 'white' : 'black',
-            marginRight: '10px'
-          }}
-        >
-          Quản lý Điểm số
-        </button>
-        
-        {/* THÊM NÚT QUẢN LÝ TÀI LIỆU */}
-        <button 
-          onClick={() => setCurrentModule('documents')} 
-          style={{ 
-            padding: '10px 20px', 
-            backgroundColor: currentModule === 'documents' ? '#007bff' : '#f8f9fa', 
-            color: currentModule === 'documents' ? 'white' : 'black',
-            marginRight: '10px'
-          }}
-        >
-          📎 Quản lý Tài liệu
-        </button>
-
-        <button 
-          onClick={() => setCurrentModule('analytics')}
-          style={{ 
-            padding: '10px 20px', 
-            backgroundColor: currentModule === 'analytics' ? '#007bff' : '#f8f9fa', 
-            color: currentModule === 'analytics' ? 'white' : 'black'
-          }}
-        >
-          📊 Thống kê
-        </button>
+    <div style={{ maxWidth: '1250px', margin: '0 auto', padding: '20px' }}>
+      {/* 🧭 MENU CHÍNH - GIỮ NGUYÊN */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-evenly',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '10px',
+          borderBottom: '2px solid #eee',
+          paddingBottom: '15px',
+          marginBottom: '25px',
+        }}
+      >
+        {[
+          ['semesters', '📘 Quản lý Học kỳ'],
+          ['subjects', '📚 Quản lý Môn học'],
+          ['grades', '🧮 Quản lý Điểm số'],
+          ['documents', '📎 Quản lý Tài liệu'],
+          ['analytics', '📊 Thống kê'],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setCurrentModule(key)}
+            style={{
+              flex: '1 1 180px',
+              textAlign: 'center',
+              padding: '12px 20px',
+              borderRadius: '10px',
+              fontWeight: 'bold',
+              border: currentModule === key ? '2px solid #007bff' : '1px solid #ccc',
+              backgroundColor: currentModule === key ? '#007bff' : '#f8f9fa',
+              color: currentModule === key ? 'white' : '#333',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* Content */}
+      {/* 📦 Nội dung */}
       {currentModule === 'semesters' && renderSemesterManagement()}
       {currentModule === 'subjects' && renderSubjectManagement()}
       {currentModule === 'grades' && renderGradeManagement()}
-      {currentModule === 'documents' && renderDocumentManagement()} {/* <--- THÊM DÒNG NÀY */}
+      {currentModule === 'documents' && renderDocumentManagement()}
       {currentModule === 'analytics' && renderAnalyticsDashboard()}
     </div>
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

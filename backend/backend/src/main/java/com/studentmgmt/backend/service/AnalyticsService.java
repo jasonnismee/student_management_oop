@@ -29,7 +29,9 @@ public class AnalyticsService {
     @Autowired
     private SemesterRepository semesterRepository;
 
-    // Tính điểm trung bình môn học
+    // ==============================
+    // 1️⃣ TÍNH ĐIỂM TRUNG BÌNH MÔN
+    // ==============================
     public Double calculateSubjectAverage(Long subjectId) {
         List<Grade> grades = gradeRepository.findBySubjectId(subjectId);
         if (grades.isEmpty()) return 0.0;
@@ -48,7 +50,9 @@ public class AnalyticsService {
         return totalWeight > 0 ? round(totalWeightedScore / totalWeight) : 0.0;
     }
 
-    // Tính điểm trung bình học kỳ (GPA)
+    // ============================
+    // 2️⃣ TÍNH GPA CỦA HỌC KỲ
+    // ============================
     public Map<String, Object> calculateSemesterGPA(Long semesterId) {
         List<Subject> subjects = subjectRepository.findBySemesterId(semesterId);
         Map<String, Object> result = new HashMap<>();
@@ -83,7 +87,9 @@ public class AnalyticsService {
         return result;
     }
 
-    // Tính điểm trung bình tích lũy (Overall GPA)
+    // =================================
+    // 3️⃣ TÍNH GPA TÍCH LŨY TOÀN KHÓA
+    // =================================
     public Map<String, Object> calculateOverallGPA(Long userId) {
         List<Semester> semesters = semesterRepository.findByUserId(userId);
         Map<String, Object> result = new HashMap<>();
@@ -121,7 +127,9 @@ public class AnalyticsService {
         return result;
     }
 
-    // Lấy dữ liệu cho biểu đồ học kỳ
+    // ===================================
+    // 4️⃣ DỮ LIỆU CHO BIỂU ĐỒ HỌC KỲ (CHART)
+    // ===================================
     public Map<String, Object> getSemesterChartData(Long userId) {
         List<Semester> semesters = semesterRepository.findByUserId(userId);
         Map<String, Object> chartData = new HashMap<>();
@@ -149,37 +157,55 @@ public class AnalyticsService {
         return chartData;
     }
 
-    // Helper method: Tính điểm trung bình của một bộ điểm
+    // ========================================
+    // 5️⃣ HÀM MỚI: TÍNH TRUNG BÌNH THEO TRỌNG SỐ
+    // ========================================
     private Double calculateGradeAverage(Grade grade) {
-        // Template weights được định nghĩa ở frontend, tạm thời dùng logic đơn giản
+        if (grade.getTemplateType() == null || grade.getTemplateType().isEmpty()) {
+            return 0.0;
+        }
+
+        // Parse trọng số từ templateType (VD: "10-20-70" -> [10,20,70])
+        String[] parts = grade.getTemplateType().split("-");
+        double[] weights = new double[parts.length];
+        double totalWeight = 0;
+
+        for (int i = 0; i < parts.length; i++) {
+            try {
+                weights[i] = Double.parseDouble(parts[i]);
+                totalWeight += weights[i];
+            } catch (NumberFormatException e) {
+                weights[i] = 0;
+            }
+        }
+
+        // Lấy các điểm (score1 -> score4)
+        Double[] scores = {
+            grade.getScore1() != null ? grade.getScore1().doubleValue() : null,
+            grade.getScore2() != null ? grade.getScore2().doubleValue() : null,
+            grade.getScore3() != null ? grade.getScore3().doubleValue() : null,
+            grade.getScore4() != null ? grade.getScore4().doubleValue() : null
+        };
+
         double total = 0;
-        int count = 0;
+        double usedWeight = 0;
 
-        if (grade.getScore1() != null) {
-            total += grade.getScore1().doubleValue();
-            count++;
-        }
-        if (grade.getScore2() != null) {
-            total += grade.getScore2().doubleValue();
-            count++;
-        }
-        if (grade.getScore3() != null) {
-            total += grade.getScore3().doubleValue();
-            count++;
-        }
-        if (grade.getScore4() != null) {
-            total += grade.getScore4().doubleValue();
-            count++;
+        for (int i = 0; i < weights.length && i < scores.length; i++) {
+            if (scores[i] != null) {
+                total += scores[i] * weights[i];
+                usedWeight += weights[i];
+            }
         }
 
-        return count > 0 ? round(total / count) : 0.0;
+        return usedWeight > 0 ? round(total / usedWeight) : 0.0;
     }
 
-    // Helper method: Làm tròn số
+    // ========================
+    // 6️⃣ HÀM LÀM TRÒN CHUẨN
+    // ========================
     private double round(double value) {
         return BigDecimal.valueOf(value)
                 .setScale(2, RoundingMode.HALF_UP)
                 .doubleValue();
     }
-
 }

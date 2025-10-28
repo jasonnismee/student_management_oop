@@ -4,20 +4,21 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
+import Home from './pages/home';
 import './App.css';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Khi reload trang: kiểm tra localStorage xem còn token + userData không
+  // Khi reload: kiểm tra token
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('userData');
     if (token && userData) {
       try {
         setCurrentUser(JSON.parse(userData));
-        setCurrentPage('dashboard');
+        setCurrentPage('home');
       } catch (e) {
         console.error('Error parsing userData:', e);
       }
@@ -28,20 +29,8 @@ function App() {
     setCurrentUser(data);
     localStorage.setItem('token', data.token);
     localStorage.setItem('userData', JSON.stringify(data));
-    setCurrentPage('dashboard');
+    setCurrentPage('home');
   };
-
-  useEffect(() => {
-    // Kiểm tra xem URL có token không (link từ email)
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    const path = window.location.pathname;
-
-    // Nếu user đang mở /reset-password?token=..., chuyển sang trang resetPassword
-    if (path === '/reset-password' && token) {
-      setCurrentPage('resetPassword');
-    }
-  }, []);
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -52,57 +41,59 @@ function App() {
 
   return (
     <div className="App">
-      <header
-        style={{
-          backgroundColor: '#f8f9fa',
-          padding: '20px',
-          textAlign: 'center',
-          position: 'relative',
-        }}
-      >
+      <header>
         <h1>HỆ THỐNG QUẢN LÝ HỌC TẬP</h1>
-        <p>Quản lý điểm số và học tập hiệu quả</p>
-
         {currentUser && (
-          <button
-            onClick={handleLogout}
-            style={{
-              position: 'absolute',
-              right: '20px',
-              top: '20px',
-              padding: '5px 10px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-            }}
-          >
+          <button className="logout-btn" onClick={handleLogout}>
             Đăng xuất
           </button>
         )}
       </header>
 
-      {currentPage === 'login' && (
-        <Login
-          onSwitchToRegister={() => setCurrentPage('register')}
-          onSwitchToForgotPassword={() => setCurrentPage('forgotPassword')}
-          onLoginSuccess={handleLoginSuccess}
-        />
-      )}
+      <main>
+        {currentPage === 'login' && (
+          <div className="page-container">
+            <Login
+              onSwitchToRegister={() => setCurrentPage('register')}
+              onSwitchToForgotPassword={() => setCurrentPage('forgotPassword')}
+              onLoginSuccess={handleLoginSuccess}
+            />
+          </div>
+        )}
 
-      {currentPage === 'register' && (
-        <Register onSwitchToLogin={() => setCurrentPage('login')} />
-      )}
+        {currentPage === 'register' && (
+          <div className="page-container">
+            <Register onSwitchToLogin={() => setCurrentPage('login')} />
+          </div>
+        )}
 
-      {currentPage === 'forgotPassword' && (
-        <ForgotPassword onBackToLogin={() => setCurrentPage('login')} />
-      )}
+        {currentPage === 'forgotPassword' && (
+          <div className="page-container">
+            <ForgotPassword onBackToLogin={() => setCurrentPage('login')} />
+          </div>
+        )}
 
-      {currentPage === 'resetPassword' && (
-        <ResetPassword onSwitchToLogin={() => setCurrentPage('login')} />
-      )}
+        {currentPage === 'resetPassword' && (
+          <div className="page-container">
+            <ResetPassword onSwitchToLogin={() => setCurrentPage('login')} />
+          </div>
+        )}
 
-      {currentPage === 'dashboard' && currentUser && (
-        <Dashboard currentUser={currentUser} />
-      )}
+        {currentPage === 'home' && currentUser && (
+          <div className="page-container wide">
+            <Home
+              currentUser={currentUser}
+              onEnterDashboard={() => setCurrentPage('dashboard')}
+            />
+          </div>
+        )}
+
+        {currentPage === 'dashboard' && currentUser && (
+          <div className="page-container wide">
+            <Dashboard currentUser={currentUser} />
+          </div>
+        )}
+      </main>
     </div>
   );
 }

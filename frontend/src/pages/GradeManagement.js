@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react'; // THÊM useCallback
+import React, { useState, useEffect, useCallback } from 'react';
 import { gradeAPI, subjectAPI, semesterAPI } from '../services/api';
 import { gradeTemplates, calculateAverage, getTemplateById } from '../config/gradeTemplates';
 
-const GradeManagement = ({ currentUser }) => {
+const GradeManagement = ({ currentUser, onGradeChange }) => { // 🆕 THÊM onGradeChange prop
   const [semesters, setSemesters] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [grades, setGrades] = useState([]);
@@ -18,10 +18,8 @@ const GradeManagement = ({ currentUser }) => {
     score4: ''
   });
 
-  // Lấy template hiện tại từ formData
   const currentTemplate = getTemplateById(formData.templateType) || gradeTemplates[0];
 
-  // SỬA: Dùng useCallback để tránh dependency warnings
   const loadSemesters = useCallback(async () => {
     try {
       const response = await semesterAPI.getSemesters(currentUser.userId);
@@ -29,7 +27,7 @@ const GradeManagement = ({ currentUser }) => {
     } catch (error) {
       console.error('Error loading semesters:', error);
     }
-  }, [currentUser.userId]); // THÊM dependency
+  }, [currentUser.userId]);
 
   const loadSubjects = useCallback(async (semesterId) => {
     try {
@@ -49,29 +47,26 @@ const GradeManagement = ({ currentUser }) => {
     }
   }, []);
 
-  // Load danh sách học kỳ khi component mount
   useEffect(() => {
     if (currentUser?.userId) {
       loadSemesters();
     }
-  }, [currentUser, loadSemesters]); // THÊM loadSemesters vào dependency
+  }, [currentUser, loadSemesters]);
 
-  // Load môn học khi chọn học kỳ
   useEffect(() => {
     if (selectedSemester) {
       loadSubjects(selectedSemester);
       setSelectedSubject('');
       setGrades([]);
     }
-  }, [selectedSemester, loadSubjects]); // THÊM loadSubjects
+  }, [selectedSemester, loadSubjects]);
 
-  // Load điểm khi chọn môn học
   useEffect(() => {
     if (selectedSubject) {
       loadGrades(selectedSubject);
       setFormData(prev => ({ ...prev, subjectId: selectedSubject }));
     }
-  }, [selectedSubject, loadGrades]); // THÊM loadGrades
+  }, [selectedSubject, loadGrades]);
 
   const handleSaveGrade = async (e) => {
     e.preventDefault();
@@ -102,7 +97,6 @@ const GradeManagement = ({ currentUser }) => {
 
       console.log('Grade response:', response.data);
 
-      // Reset form
       setShowForm(false);
       setEditingGrade(null);
       setFormData({
@@ -113,8 +107,13 @@ const GradeManagement = ({ currentUser }) => {
         score4: ''
       });
       
-      // Reload data
       loadGrades(selectedSubject);
+      
+      // 🆕 GỌI CALLBACK KHI CÓ THAY ĐỔI ĐIỂM
+      if (onGradeChange) {
+        onGradeChange();
+      }
+      
       alert(editingGrade ? 'Cập nhật điểm thành công!' : 'Thêm điểm thành công!');
     } catch (error) {
       console.error('Error saving grade:', error);
@@ -139,6 +138,12 @@ const GradeManagement = ({ currentUser }) => {
       try {
         await gradeAPI.deleteGrade(id, currentUser.userId);
         loadGrades(selectedSubject);
+        
+        // 🆕 GỌI CALLBACK KHI CÓ THAY ĐỔI ĐIỂM
+        if (onGradeChange) {
+          onGradeChange();
+        }
+        
         alert('Xóa điểm thành công!');
       } catch (error) {
         alert('Lỗi khi xóa điểm: ' + error.response?.data?.message);
@@ -169,14 +174,12 @@ const GradeManagement = ({ currentUser }) => {
     });
   };
 
-  // Tính điểm trung bình cho một grade
   const calculateGradeAverage = (grade) => {
     const template = getTemplateById(grade.templateType);
     const scores = [grade.score1, grade.score2, grade.score3, grade.score4];
     return calculateAverage(scores, template);
   };
 
-  // Tính điểm trung bình tổng cho môn học
   const calculateOverallAverage = () => {
     if (grades.length === 0) return 0;
     
@@ -190,16 +193,27 @@ const GradeManagement = ({ currentUser }) => {
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
-      <h2>Quản Lý Điểm Số</h2>
+      <h2>🧮 Quản Lý Điểm Số</h2>
       
       {/* Chọn học kỳ và môn học */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: '20px', 
+        marginBottom: '20px', 
+        flexWrap: 'wrap',
+        alignItems: 'center'
+      }}>
         <div>
-          <label>Chọn học kỳ: </label>
+          <label style={{ fontWeight: '500', marginRight: '10px' }}>Chọn học kỳ: </label>
           <select 
             value={selectedSemester} 
             onChange={(e) => setSelectedSemester(e.target.value)}
-            style={{ padding: '8px', marginLeft: '10px' }}
+            style={{ 
+              padding: '10px', 
+              borderRadius: '8px',
+              border: '1px solid #ddd',
+              minWidth: '200px'
+            }}
           >
             <option value="">-- Chọn học kỳ --</option>
             {semesters.map(semester => (
@@ -211,11 +225,16 @@ const GradeManagement = ({ currentUser }) => {
         </div>
 
         <div>
-          <label>Chọn môn học: </label>
+          <label style={{ fontWeight: '500', marginRight: '10px' }}>Chọn môn học: </label>
           <select 
             value={selectedSubject} 
             onChange={(e) => setSelectedSubject(e.target.value)}
-            style={{ padding: '8px', marginLeft: '10px' }}
+            style={{ 
+              padding: '10px', 
+              borderRadius: '8px',
+              border: '1px solid #ddd',
+              minWidth: '250px'
+            }}
             disabled={!selectedSemester}
           >
             <option value="">-- Chọn môn học --</option>
@@ -231,44 +250,47 @@ const GradeManagement = ({ currentUser }) => {
       {/* Hiển thị điểm trung bình tổng */}
       {selectedSubject && grades.length > 0 && (
         <div style={{ 
-          backgroundColor: '#f8f9fa', 
-          padding: '15px', 
-          borderRadius: '5px', 
+          backgroundColor: '#e7f3ff', 
+          padding: '20px', 
+          borderRadius: '10px', 
           marginBottom: '20px',
-          border: '1px solid #dee2e6'
+          border: '2px solid #007bff',
+          textAlign: 'center'
         }}>
-          <h3>Điểm trung bình môn: <span style={{ color: '#007bff' }}>{calculateOverallAverage()}/10</span></h3>
+          <h3 style={{ margin: 0, color: '#007bff' }}>
+            Điểm trung bình môn: <span style={{ fontSize: '1.5em', fontWeight: 'bold' }}>{calculateOverallAverage()}/10</span>
+          </h3>
         </div>
       )}
 
-      {/* Button thêm điểm */}
-      {selectedSubject && !showForm && (
-        <button 
-          onClick={() => setShowForm(true)}
-          style={{ marginBottom: '20px', padding: '10px 15px', backgroundColor: '#007bff', color: 'white' }}
-        >
-          + Thêm Bộ Điểm Mới
-        </button>
-      )}
-
-      {/* Form thêm/sửa điểm */}
+      {/* Form thêm/sửa điểm - Tự động hiển thị khi chọn môn học */}
       {showForm && selectedSubject && (
         <form onSubmit={handleSaveGrade} style={{ 
-          border: '1px solid #ddd', 
-          padding: '20px', 
-          marginBottom: '20px',
-          borderRadius: '5px' 
+          backgroundColor: 'white',
+          border: '2px solid #007bff',
+          padding: '25px', 
+          marginBottom: '25px',
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         }}>
-          <h3>{editingGrade ? 'Chỉnh sửa Điểm' : 'Thêm Bộ Điểm Mới'}</h3>
+          <h3 style={{ marginBottom: '20px', color: '#333' }}>
+            {editingGrade ? '✏️ Chỉnh sửa Điểm' : '➕ Thêm Bộ Điểm Mới'}
+          </h3>
           
           {/* Chọn template */}
           <div style={{ marginBottom: '20px' }}>
-            <label>Chọn hệ số điểm: </label>
+            <label style={{ fontWeight: '500' }}>Chọn hệ số điểm: </label>
             <select
               value={formData.templateType}
               onChange={handleTemplateChange}
-              style={{ padding: '8px', marginLeft: '10px', width: '200px' }}
-              disabled={editingGrade} // Không cho đổi template khi edit
+              style={{ 
+                padding: '10px', 
+                marginLeft: '10px', 
+                width: '200px',
+                borderRadius: '8px',
+                border: '1px solid #ddd'
+              }}
+              disabled={editingGrade}
             >
               {gradeTemplates.map(template => (
                 <option key={template.id} value={template.id}>
@@ -280,32 +302,49 @@ const GradeManagement = ({ currentUser }) => {
 
           {/* Hiển thị các ô điểm theo template */}
           <div style={{ marginBottom: '20px' }}>
-            <h4>Nhập điểm (thang điểm 10):</h4>
-            {currentTemplate.labels.slice(0, currentTemplate.fields).map((label, index) => (
-              <div key={index} style={{ marginBottom: '10px' }}>
-                <label>{label}: </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="10"
-                  placeholder="0-10"
-                  value={formData[`score${index + 1}`]}
-                  onChange={(e) => setFormData({
-                    ...formData, 
-                    [`score${index + 1}`]: e.target.value
-                  })}
-                  style={{ padding: '8px', marginLeft: '10px', width: '100px' }}
-                  required
-                />
-              </div>
-            ))}
+            <h4 style={{ marginBottom: '15px' }}>Nhập điểm (thang điểm 10):</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+              {currentTemplate.labels.slice(0, currentTemplate.fields).map((label, index) => (
+                <div key={index}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>{label}:</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    placeholder="0.0 - 10.0"
+                    value={formData[`score${index + 1}`]}
+                    onChange={(e) => setFormData({
+                      ...formData, 
+                      [`score${index + 1}`]: e.target.value
+                    })}
+                    style={{ 
+                      padding: '10px', 
+                      width: '100%',
+                      borderRadius: '8px',
+                      border: '1px solid #ddd'
+                    }}
+                    required
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Hiển thị điểm trung bình dự kiến */}
-          <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#e9ecef', borderRadius: '5px' }}>
+          <div style={{ 
+            marginBottom: '20px', 
+            padding: '15px', 
+            backgroundColor: '#f8f9fa', 
+            borderRadius: '8px',
+            border: '1px solid #dee2e6'
+          }}>
             <strong>Điểm trung bình dự kiến: </strong>
-            <span style={{ color: '#007bff', fontWeight: 'bold' }}>
+            <span style={{ 
+              color: '#007bff', 
+              fontWeight: 'bold',
+              fontSize: '1.2em'
+            }}>
               {calculateAverage([
                 formData.score1, 
                 formData.score2, 
@@ -316,66 +355,165 @@ const GradeManagement = ({ currentUser }) => {
             </span>
           </div>
 
-          <div>
-            <button type="submit" style={{ padding: '8px 15px', backgroundColor: '#28a745', color: 'white', marginRight: '10px' }}>
-              {editingGrade ? 'Cập nhật' : 'Thêm Điểm'}
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button type="submit" style={{ 
+              padding: '12px 20px', 
+              backgroundColor: '#28a745', 
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '500'
+            }}>
+              {editingGrade ? '💾 Cập nhật' : '✅ Thêm Điểm'}
             </button>
-            <button type="button" onClick={handleCancelForm} style={{ padding: '8px 15px', backgroundColor: '#6c757d', color: 'white' }}>
-              Hủy
+            <button type="button" onClick={handleCancelForm} style={{ 
+              padding: '12px 20px', 
+              backgroundColor: '#6c757d', 
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '500'
+            }}>
+              ❌ Hủy
             </button>
           </div>
         </form>
       )}
 
+      {/* Nút thêm điểm - ĐÃ XÓA theo yêu cầu */}
+
       {/* Danh sách bộ điểm */}
       <div>
-        <h3>Danh sách bộ điểm:</h3>
+        <h3 style={{ marginBottom: '20px' }}>
+          📋 Danh sách bộ điểm {selectedSubject && `(${grades.length} bộ điểm)`}
+        </h3>
         {!selectedSubject ? (
-          <p>Vui lòng chọn môn học để xem điểm</p>
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '40px', 
+            color: '#666',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '10px'
+          }}>
+            <p>Vui lòng chọn môn học để xem điểm</p>
+          </div>
         ) : grades.length === 0 ? (
-          <p>Chưa có bộ điểm nào cho môn học này.</p>
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '40px', 
+            color: '#666',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '10px'
+          }}>
+            <p>Chưa có bộ điểm nào cho môn học này.</p>
+            <button 
+              onClick={() => setShowForm(true)}
+              style={{ 
+                marginTop: '15px',
+                padding: '12px 20px', 
+                backgroundColor: '#007bff', 
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              ➕ Thêm Điểm Đầu Tiên
+            </button>
+          </div>
         ) : (
-          <div>
+          <div style={{ display: 'grid', gap: '15px' }}>
             {grades.map(grade => {
               const template = getTemplateById(grade.templateType);
+              const gradeAverage = calculateGradeAverage(grade);
               return (
                 <div key={grade.id} style={{
-                  border: '1px solid #ddd',
-                  padding: '15px',
-                  marginBottom: '10px',
-                  borderRadius: '5px'
+                  backgroundColor: 'white',
+                  border: '1px solid #e0e0e0',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  transition: 'transform 0.2s ease'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <h4>Hệ số: {template.name}</h4>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'flex-start',
+                    marginBottom: '15px'
+                  }}>
                     <div>
+                      <h4 style={{ margin: '0 0 5px 0', color: '#333' }}>Hệ số: {template.name}</h4>
+                      <small style={{ color: '#666' }}>
+                        Cập nhật: {new Date(grade.updatedAt || grade.createdAt).toLocaleDateString('vi-VN')}
+                      </small>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
                       <button 
                         onClick={() => handleEditGrade(grade)}
-                        style={{ padding: '5px 10px', backgroundColor: '#ffc107', color: 'black', marginRight: '10px' }}
+                        style={{ 
+                          padding: '8px 12px', 
+                          backgroundColor: '#ffc107', 
+                          color: 'black',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
                       >
-                        Sửa
+                        ✏️ Sửa
                       </button>
                       <button 
                         onClick={() => handleDeleteGrade(grade.id)}
-                        style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white' }}
+                        style={{ 
+                          padding: '8px 12px', 
+                          backgroundColor: '#dc3545', 
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
                       >
-                        Xóa
+                        🗑️ Xóa
                       </button>
                     </div>
                   </div>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+                    gap: '15px',
+                    marginBottom: '15px'
+                  }}>
                     {template.labels.slice(0, template.fields).map((label, index) => (
-                      <div key={index}>
-                        <strong>{label}:</strong> {grade[`score${index + 1}`] || 'Chưa nhập'}/10
+                      <div key={index} style={{
+                        padding: '10px',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '6px',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{ fontSize: '0.9em', color: '#666', marginBottom: '5px' }}>{label}</div>
+                        <div style={{ fontWeight: 'bold', color: '#333' }}>
+                          {grade[`score${index + 1}`] ? `${grade[`score${index + 1}`]}/10` : '—'}
+                        </div>
                       </div>
                     ))}
                   </div>
                   
-                  <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
-                    <strong>Điểm trung bình: {calculateGradeAverage(grade)}/10</strong>
+                  <div style={{ 
+                    padding: '12px',
+                    backgroundColor: '#e7f3ff',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    border: '1px solid #007bff'
+                  }}>
+                    <strong style={{ color: '#007bff', fontSize: '1.1em' }}>
+                      Điểm trung bình: {gradeAverage}/10
+                    </strong>
                   </div>
-                  
-                  <small>Thời gian: {new Date(grade.createdAt).toLocaleDateString('vi-VN')}</small>
                 </div>
               );
             })}

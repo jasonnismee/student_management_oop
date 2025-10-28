@@ -13,7 +13,6 @@ const SubjectManagement = ({ currentUser }) => {
     semesterId: ''
   });
 
-  // Sửa: Dùng useCallback
   const loadSemesters = useCallback(async () => {
     try {
       const response = await semesterAPI.getSemesters(currentUser.userId);
@@ -23,14 +22,12 @@ const SubjectManagement = ({ currentUser }) => {
     }
   }, [currentUser.userId]);
 
-  // Load danh sách học kỳ khi component mount
   useEffect(() => {
     if (currentUser?.userId) {
       loadSemesters();
     }
-  }, [currentUser, loadSemesters]); // Sửa: Thêm dependency
+  }, [currentUser, loadSemesters]);
 
-  // Load môn học khi chọn học kỳ
   useEffect(() => {
     if (selectedSemester) {
       loadSubjects(selectedSemester);
@@ -59,12 +56,11 @@ const SubjectManagement = ({ currentUser }) => {
         name: formData.name,
         credits: parseInt(formData.credits),
         subjectCode: formData.subjectCode,
-        semesterId: parseInt(selectedSemester) // QUAN TRỌNG: chuyển thành số
+        semesterId: parseInt(selectedSemester)
       };
 
       console.log('Sending subject data:', subjectData);
 
-      // VALIDATION: kiểm tra semesterId
       if (!subjectData.semesterId || isNaN(subjectData.semesterId)) {
         alert('Lỗi: SemesterId không hợp lệ');
         return;
@@ -103,19 +99,25 @@ const SubjectManagement = ({ currentUser }) => {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-      <h2>Quản Lý Môn Học</h2>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
+      <h2>📚 Quản Lý Môn Học</h2>
       
-      {/* Chọn học kỳ */}
-      <div style={{ marginBottom: '20px' }}>
-        <label>Chọn học kỳ: </label>
+      {/* Chọn học kỳ - GIỮ NGUYÊN */}
+      <div style={{ marginBottom: '25px' }}>
+        <label style={{ fontWeight: '500', marginRight: '10px', fontSize: '16px' }}>Chọn học kỳ: </label>
         <select 
           value={selectedSemester} 
           onChange={(e) => {
             setSelectedSemester(e.target.value);
             setFormData(prev => ({ ...prev, semesterId: e.target.value }));
           }}
-          style={{ padding: '8px', marginLeft: '10px' }}
+          style={{ 
+            padding: '12px', 
+            borderRadius: '8px',
+            border: '1px solid #ddd',
+            minWidth: '300px',
+            fontSize: '14px'
+          }}
         >
           <option value="">-- Chọn học kỳ --</option>
           {semesters.map(semester => (
@@ -126,96 +128,353 @@ const SubjectManagement = ({ currentUser }) => {
         </select>
       </div>
 
-      {/* Button thêm môn học */}
+      {/* Button thêm môn học - GIỮ NGUYÊN */}
       {selectedSemester && (
         <button 
           onClick={() => setShowForm(!showForm)}
-          style={{ marginBottom: '20px', padding: '10px 15px', backgroundColor: '#007bff', color: 'white' }}
+          style={{ 
+            marginBottom: '25px', 
+            padding: '12px 20px', 
+            backgroundColor: '#007bff', 
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
         >
-          {showForm ? 'Hủy' : '+ Thêm Môn Học Mới'}
+          {showForm ? '❌ Hủy' : '➕ Thêm Môn Học Mới'}
         </button>
       )}
 
-      {/* Form thêm môn học */}
+      {/* Form thêm môn học - CĂN GIỮA */}
       {showForm && selectedSemester && (
-        <form onSubmit={handleCreateSubject} style={{ 
-          border: '1px solid #ddd', 
-          padding: '20px', 
-          marginBottom: '20px',
-          borderRadius: '5px' 
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center',
+          marginBottom: '30px'
         }}>
-          <h3>Thêm Môn Học Mới</h3>
-          
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="text"
-              placeholder="Tên môn học"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              style={{ width: '100%', padding: '8px' }}
-              required
-            />
-          </div>
+          <form onSubmit={handleCreateSubject} style={{ 
+            backgroundColor: 'white',
+            border: '2px solid #007bff',
+            padding: '30px', 
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            width: '100%',
+            maxWidth: '500px'
+          }}>
+            <h3 style={{ 
+              marginBottom: '25px', 
+              color: '#333',
+              textAlign: 'center',
+              borderBottom: '2px solid #f0f0f0',
+              paddingBottom: '15px'
+            }}>
+              ➕ Thêm Môn Học Mới
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Tên môn học */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: '#333',
+                  fontSize: '14px'
+                }}>
+                  Tên môn học: *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Nhập tên môn học..."
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #ddd',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                  required
+                />
+              </div>
 
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="text"
-              placeholder="Mã môn học (tùy chọn)"
-              value={formData.subjectCode}
-              onChange={(e) => setFormData({...formData, subjectCode: e.target.value})}
-              style={{ width: '100%', padding: '8px' }}
-            />
-          </div>
+              {/* Mã môn học */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: '#333',
+                  fontSize: '14px'
+                }}>
+                  Mã môn học (tùy chọn):
+                </label>
+                <input
+                  type="text"
+                  placeholder="Nhập mã môn học..."
+                  value={formData.subjectCode}
+                  onChange={(e) => setFormData({...formData, subjectCode: e.target.value})}
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #ddd',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
 
-          <div style={{ marginBottom: '10px' }}>
-            <label>Số tín chỉ: </label>
-            <select
-              value={formData.credits}
-              onChange={(e) => setFormData({...formData, credits: parseInt(e.target.value)})}
-              style={{ padding: '8px', marginLeft: '10px' }}
+              {/* Số tín chỉ */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: '#333',
+                  fontSize: '14px'
+                }}>
+                  Số tín chỉ: *
+                </label>
+                <select
+                  value={formData.credits}
+                  onChange={(e) => setFormData({...formData, credits: parseInt(e.target.value)})}
+                  style={{ 
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #ddd',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <option value={1}>1 tín chỉ</option>
+                  <option value={2}>2 tín chỉ</option>
+                  <option value={3}>3 tín chỉ</option>
+                  <option value={4}>4 tín chỉ</option>
+                </select>
+              </div>
+
+              {/* Học kỳ hiện tại (readonly) */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: '#333',
+                  fontSize: '14px'
+                }}>
+                  Học kỳ:
+                </label>
+                <input
+                  type="text"
+                  value={semesters.find(s => s.id === parseInt(selectedSemester))?.name || ''}
+                  readOnly
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #ddd',
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                    backgroundColor: '#f8f9fa',
+                    color: '#666'
+                  }}
+                />
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              style={{ 
+                marginTop: '25px',
+                padding: '14px 30px', 
+                backgroundColor: '#28a745', 
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '15px',
+                fontWeight: '600',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
             >
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-            </select>
-          </div>
+              ✅ Tạo Môn Học
+            </button>
 
-          <button type="submit" style={{ padding: '8px 15px', backgroundColor: '#28a745', color: 'white' }}>
-            Tạo Môn Học
-          </button>
-        </form>
+            {/* Thông tin hướng dẫn */}
+            <div style={{
+              marginTop: '20px',
+              padding: '15px',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '8px',
+              border: '1px solid #e9ecef'
+            }}>
+              <div style={{ 
+                fontSize: '12px', 
+                color: '#6c757d',
+                lineHeight: '1.5'
+              }}>
+                <div style={{ fontWeight: '600', marginBottom: '5px' }}>💡 Lưu ý:</div>
+                <div>• Tên môn học và số tín chỉ là bắt buộc</div>
+                <div>• Mã môn học giúp dễ dàng nhận diện và quản lý</div>
+                <div>• Môn học sẽ được thêm vào học kỳ đã chọn</div>
+              </div>
+            </div>
+          </form>
+        </div>
       )}
 
-      {/* Danh sách môn học */}
+      {/* Danh sách môn học - GIỮ NGUYÊN */}
       <div>
-        <h3>Danh sách môn học:</h3>
+        <h3 style={{ marginBottom: '20px' }}>
+          📋 Danh sách môn học {selectedSemester && `(${subjects.length} môn)`}
+        </h3>
         {!selectedSemester ? (
-          <p>Vui lòng chọn học kỳ để xem môn học</p>
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '40px', 
+            color: '#666',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '10px'
+          }}>
+            <p>Vui lòng chọn học kỳ để xem môn học</p>
+          </div>
         ) : subjects.length === 0 ? (
-          <p>Chưa có môn học nào trong học kỳ này.</p>
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '40px', 
+            color: '#666',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '10px'
+          }}>
+            <p>Chưa có môn học nào trong học kỳ này.</p>
+            <button 
+              onClick={() => setShowForm(true)}
+              style={{ 
+                marginTop: '15px',
+                padding: '12px 20px', 
+                backgroundColor: '#007bff', 
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              ➕ Thêm Môn Học Đầu Tiên
+            </button>
+          </div>
         ) : (
-          <div>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', 
+            gap: '20px' 
+          }}>
             {subjects.map(subject => (
               <div key={subject.id} style={{
-                border: '1px solid #ddd',
-                padding: '15px',
-                marginBottom: '10px',
-                borderRadius: '5px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
+                backgroundColor: 'white',
+                border: '1px solid #e0e0e0',
+                padding: '25px',
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                transition: 'transform 0.2s ease',
+                position: 'relative'
               }}>
-                <div>
-                  <h4>{subject.name}</h4>
-                  <p>Mã môn: {subject.subjectCode || 'Chưa có mã'} | Số tín chỉ: {subject.credits}</p>
+                <div style={{ 
+                  position: 'absolute',
+                  top: '15px',
+                  right: '15px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  padding: '5px 10px',
+                  borderRadius: '15px',
+                  fontSize: '12px',
+                  fontWeight: 'bold'
+                }}>
+                  {subject.credits} tín chỉ
                 </div>
-                <button 
-                  onClick={() => handleDeleteSubject(subject.id)}
-                  style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white' }}
-                >
-                  Xóa
-                </button>
+                
+                <h4 style={{ 
+                  margin: '0 0 10px 0', 
+                  color: '#333',
+                  fontSize: '1.3em',
+                  paddingRight: '80px'
+                }}>
+                  {subject.name}
+                </h4>
+                
+                {subject.subjectCode && (
+                  <div style={{ 
+                    color: '#666',
+                    marginBottom: '15px',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span style={{ 
+                      backgroundColor: '#6c757d',
+                      color: 'white',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: '500'
+                    }}>
+                      MÃ
+                    </span>
+                    {subject.subjectCode}
+                  </div>
+                )}
+                
+                <div style={{ 
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '20px'
+                }}>
+                  <div style={{ 
+                    color: '#28a745',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <span>📚</span>
+                    <span>Môn học</span>
+                  </div>
+                  <button 
+                    onClick={() => handleDeleteSubject(subject.id)}
+                    style={{ 
+                      padding: '8px 16px', 
+                      backgroundColor: '#dc3545', 
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    🗑️ Xóa
+                  </button>
+                </div>
               </div>
             ))}
           </div>
