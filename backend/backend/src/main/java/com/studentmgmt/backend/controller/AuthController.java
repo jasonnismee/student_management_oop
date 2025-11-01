@@ -52,6 +52,7 @@ public class AuthController {
         response.put("message", "User registered successfully");
         response.put("userId", newUserId);
         response.put("studentId", user.getStudentId());
+        response.put("email", user.getEmail());
         return ResponseEntity.ok(response);
     }
 
@@ -70,9 +71,12 @@ public class AuthController {
         response.put("userId", user.getId());
         response.put("studentId", user.getStudentId());
         response.put("fullName", user.getFullName());
+        response.put("email", user.getEmail()); 
+        
         return ResponseEntity.ok(response);
     }
 
+    
     // Inner class cho LoginRequest
     public static class LoginRequest {
         private String studentId;
