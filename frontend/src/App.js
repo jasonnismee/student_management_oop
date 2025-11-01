@@ -6,6 +6,7 @@ import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/home';
 import './App.css';
+import Chatbot from "./components/Chatbot";
 
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
@@ -25,13 +26,23 @@ function App() {
     }
   }, []);
 
+  // const handleLoginSuccess = (data) => {
+  //   setCurrentUser(data);
+  //   localStorage.setItem('token', data.token);
+  //   localStorage.setItem('userData', JSON.stringify(data));
+  //   setCurrentPage('home');
+  // };
+
+
+
   const handleLoginSuccess = (data) => {
+    console.log('Data nhận từ Login:', data); // ← GIỮ LẠI CONSOLE NÀY
     setCurrentUser(data);
     localStorage.setItem('token', data.token);
     localStorage.setItem('userData', JSON.stringify(data));
     setCurrentPage('home');
   };
-
+  
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('token');
@@ -94,6 +105,9 @@ function App() {
           </div>
         )}
       </main>
+
+      {/* SỬA: Chỉ hiển thị Chatbot khi đã đăng nhập */}
+      {currentUser && <Chatbot />}
     </div>
   );
 }

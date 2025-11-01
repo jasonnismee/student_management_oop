@@ -18,6 +18,7 @@ const Login = ({ onSwitchToRegister, onSwitchToForgotPassword, onLoginSuccess })
         userId: response.data.userId,
         studentId: response.data.studentId,
         fullName: response.data.fullName,
+        email: response.data.email,
         token: response.data.token,
       };
       onLoginSuccess(userData);

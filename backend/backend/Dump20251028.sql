@@ -16,6 +16,30 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `chat_messages`
+--
+
+DROP TABLE IF EXISTS `chat_messages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `chat_messages` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `message` text NOT NULL,
+  `response` text NOT NULL,
+  `sender` varchar(50) NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `student_id` bigint DEFAULT NULL,
+  `student_code` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_chat_messages_student_id` (`student_id`),
+  KEY `idx_chat_messages_student_code` (`student_code`),
+  KEY `idx_chat_messages_timestamp` (`timestamp`),
+  CONSTRAINT `fk_chat_messages_student` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `documents`
 --
 
