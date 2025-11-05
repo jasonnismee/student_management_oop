@@ -29,6 +29,9 @@ public class AnalyticsService {
     @Autowired
     private SemesterRepository semesterRepository;
 
+    @Autowired
+    private SemesterGpaService semesterGpaService;
+
     // ==============================
     // 1️⃣ TÍNH ĐIỂM TRUNG BÌNH MÔN
     // ==============================
@@ -51,44 +54,39 @@ public class AnalyticsService {
     }
 
     // ============================
-    // 2️⃣ TÍNH GPA CỦA HỌC KỲ
+    // 2️⃣ LẤY GPA HỌC KỲ TỪ DATABASE
     // ============================
     public Map<String, Object> calculateSemesterGPA(Long semesterId) {
-        List<Subject> subjects = subjectRepository.findBySemesterId(semesterId);
         Map<String, Object> result = new HashMap<>();
-
-        if (subjects.isEmpty()) {
+        
+        // Lấy học kỳ từ database - ĐÃ SỬA
+        Semester semester = semesterRepository.findById(semesterId);
+        if (semester == null) {
             result.put("gpa", 0.0);
             result.put("totalCredits", 0);
             result.put("subjectCount", 0);
             return result;
         }
 
-        double totalWeightedScore = 0;
-        int totalCredits = 0;
-        int subjectCount = 0;
+        // Lấy GPA từ database (đã được tính sẵn)
+        BigDecimal semesterGpa = semester.getSemesterGpa();
+        Double gpaValue = semesterGpa != null ? semesterGpa.doubleValue() : 0.0;
+        
+        // Lấy tổng số tín chỉ và số môn
+        List<Subject> subjects = subjectRepository.findBySemesterId(semesterId);
+        int totalCredits = subjects.stream().mapToInt(Subject::getCredits).sum();
+        int subjectCount = subjects.size();
 
-        for (Subject subject : subjects) {
-            Double subjectAverage = calculateSubjectAverage(subject.getId());
-            if (subjectAverage > 0) {
-                totalWeightedScore += subjectAverage * subject.getCredits();
-                totalCredits += subject.getCredits();
-                subjectCount++;
-            }
-        }
-
-        double gpa = totalCredits > 0 ? round(totalWeightedScore / totalCredits) : 0.0;
-
-        result.put("gpa", gpa);
+        result.put("gpa", gpaValue);
         result.put("totalCredits", totalCredits);
         result.put("subjectCount", subjectCount);
-        result.put("maxGpa", 10.0); // Thang điểm 10
+        result.put("maxGpa", 4.0); // Thang điểm 4
 
         return result;
     }
 
     // =================================
-    // 3️⃣ TÍNH GPA TÍCH LŨY TOÀN KHÓA
+    // 3️⃣ TÍNH GPA TÍCH LŨY TOÀN KHÓA - SỬA LẠI
     // =================================
     public Map<String, Object> calculateOverallGPA(Long userId) {
         List<Semester> semesters = semesterRepository.findByUserId(userId);
@@ -105,30 +103,43 @@ public class AnalyticsService {
         int totalCredits = 0;
         int semesterCount = 0;
 
+        // Duyệt qua tất cả học kỳ và lấy GPA từ database
         for (Semester semester : semesters) {
-            Map<String, Object> semesterGPA = calculateSemesterGPA(semester.getId());
-            double gpa = (Double) semesterGPA.get("gpa");
-            int credits = (Integer) semesterGPA.get("totalCredits");
-
-            if (gpa > 0) {
-                totalWeightedScore += gpa * credits;
-                totalCredits += credits;
+            // Lấy GPA học kỳ từ database (đã được tính sẵn bởi SemesterGpaService)
+            BigDecimal semesterGpa = semester.getSemesterGpa();
+            
+            if (semesterGpa != null && semesterGpa.compareTo(BigDecimal.ZERO) > 0) {
+                // Lấy tổng số tín chỉ của học kỳ
+                List<Subject> subjects = subjectRepository.findBySemesterId(semester.getId());
+                int semesterCredits = subjects.stream().mapToInt(Subject::getCredits).sum();
+                
+                totalWeightedScore += semesterGpa.doubleValue() * semesterCredits;
+                totalCredits += semesterCredits;
                 semesterCount++;
+                
+                System.out.println("📊 Học kỳ " + semester.getName() + 
+                                 ": GPA=" + semesterGpa + 
+                                 ", Tín chỉ=" + semesterCredits +
+                                 ", Weighted=" + (semesterGpa.doubleValue() * semesterCredits));
             }
         }
 
         double overallGpa = totalCredits > 0 ? round(totalWeightedScore / totalCredits) : 0.0;
 
+        System.out.println("🎯 GPA Tổng thể: " + overallGpa + 
+                         " (Total Credits: " + totalCredits + 
+                         ", Semesters: " + semesterCount + ")");
+
         result.put("overallGpa", overallGpa);
         result.put("totalCredits", totalCredits);
         result.put("semesterCount", semesterCount);
-        result.put("maxGpa", 10.0);
+        result.put("maxGpa", 4.0);
 
         return result;
     }
 
     // ===================================
-    // 4️⃣ DỮ LIỆU CHO BIỂU ĐỒ HỌC KỲ (CHART)
+    // 4️⃣ DỮ LIỆU CHO BIỂU ĐỒ HỌC KỲ (CHART) - ĐÃ SỬA
     // ===================================
     public Map<String, Object> getSemesterChartData(Long userId) {
         List<Semester> semesters = semesterRepository.findByUserId(userId);
@@ -139,13 +150,16 @@ public class AnalyticsService {
         List<Integer> subjectCounts = new ArrayList<>();
 
         for (Semester semester : semesters) {
-            Map<String, Object> semesterGPA = calculateSemesterGPA(semester.getId());
-            double gpa = (Double) semesterGPA.get("gpa");
-            int subjectCount = (Integer) semesterGPA.get("subjectCount");
+            // Lấy GPA trực tiếp từ database
+            BigDecimal semesterGpa = semester.getSemesterGpa();
+            Double gpaValue = semesterGpa != null ? semesterGpa.doubleValue() : 0.0;
+            
+            List<Subject> subjects = subjectRepository.findBySemesterId(semester.getId());
+            int subjectCount = subjects.size();
 
-            if (gpa > 0) {
+            if (gpaValue > 0) {
                 labels.add(semester.getName());
-                gpaData.add(gpa);
+                gpaData.add(gpaValue);
                 subjectCounts.add(subjectCount);
             }
         }
@@ -160,7 +174,7 @@ public class AnalyticsService {
     // ========================================
     // 5️⃣ HÀM MỚI: TÍNH TRUNG BÌNH THEO TRỌNG SỐ
     // ========================================
-    private Double calculateGradeAverage(Grade grade) {
+    public Double calculateGradeAverage(Grade grade) {
         if (grade.getTemplateType() == null || grade.getTemplateType().isEmpty()) {
             return 0.0;
         }

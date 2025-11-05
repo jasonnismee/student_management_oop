@@ -1,5 +1,6 @@
 package com.studentmgmt.backend.model;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class Semester {
@@ -23,4 +24,16 @@ public class Semester {
 
     public LocalDate getEndDate() { return endDate; }
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
+    // THÊM TRƯỜNG GPA HỌC KỲ
+    private BigDecimal semesterGpa;
+    
+    // GETTERS & SETTERS
+    public BigDecimal getSemesterGpa() {
+        return semesterGpa;
+    }
+    
+    public void setSemesterGpa(BigDecimal semesterGpa) {
+        this.semesterGpa = semesterGpa;
+    }
 }

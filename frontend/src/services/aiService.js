@@ -14,12 +14,6 @@ const getCurrentStudent = () => {
   }
 };
 
-// 🔑 Hàm lấy headers authorization
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
-};
-
 // 🎯 Hàm gọi backend AI
 export const getAIResponse = async (userMessage) => {
   try {
@@ -38,7 +32,6 @@ export const getAIResponse = async (userMessage) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
         },
         timeout: 30000,
       }
@@ -58,7 +51,6 @@ export const testBackendConnection = async () => {
   try {
     console.log('🧪 Testing backend connection...');
     const response = await axios.get(`${API_BASE_URL}/api/ai-chat/test`, {
-      headers: getAuthHeaders(),
       timeout: 5000,
     });
     console.log('✅ Backend test successful:', response.data);
@@ -68,4 +60,3 @@ export const testBackendConnection = async () => {
     return { success: false, error: error.message };
   }
 };
-

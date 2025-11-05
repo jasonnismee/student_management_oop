@@ -13,8 +13,21 @@ const Dashboard = ({ currentUser }) => {
     startDate: '',
     endDate: '',
   });
+
   const [currentModule, setCurrentModule] = useState('semesters');
-  const [refreshAnalytics, setRefreshAnalytics] = useState(0); // 🆕 THÊM DÒNG NÀY
+  const [refreshAnalytics, setRefreshAnalytics] = useState(0);
+
+  // Hàm chuyển đổi định dạng ngày
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}/${month}/${year}`;
+  };
 
   const loadSemesters = useCallback(async () => {
     try {
@@ -30,6 +43,12 @@ const Dashboard = ({ currentUser }) => {
       loadSemesters();
     }
   }, [currentUser, loadSemesters]);
+
+  // 🎯 AUTO-REFRESH - ĐÃ SỬA: Đặt sau khi loadSemesters đã được định nghĩa
+  useEffect(() => {
+    const interval = setInterval(loadSemesters, 3000);
+    return () => clearInterval(interval);
+  }, [loadSemesters]);
 
   const handleCreateSemester = async (e) => {
     e.preventDefault();
@@ -155,14 +174,104 @@ const Dashboard = ({ currentUser }) => {
         <p>Chưa có học kỳ nào. Hãy tạo học kỳ đầu tiên!</p>
       ) : (
         semesters.map((s) => (
-          <div key={s.id} style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '6px', marginBottom: '10px' }}>
-            <h4>{s.name}</h4>
-            <p>Bắt đầu: {s.startDate} | Kết thúc: {s.endDate}</p>
+          <div key={s.id} style={{ 
+            border: '1px solid #e0e0e0', 
+            padding: '20px', 
+            borderRadius: '12px', 
+            marginBottom: '15px',
+            backgroundColor: 'white',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+          }}>
+            <h4 style={{ 
+              margin: '0 0 15px 0', 
+              color: '#333',
+              fontSize: '1.3em',
+              fontWeight: '600'
+            }}>
+              {s.name}
+            </h4>
+
+            {/* 🆕 HIỂN THỊ GPA - ĐƠN GIẢN */}
+            <div style={{ 
+                display: 'inline-block',
+                backgroundColor: s.semesterGpa ? '#007bff' : '#6c757d',
+                color: 'white',
+                padding: '4px 10px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: '600',
+                marginBottom: '12px'
+            }}>
+                📊 GPA: {s.semesterGpa ? s.semesterGpa.toFixed(2) : 'Chưa có'}
+            </div>
+                    
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '25px',
+              marginBottom: '15px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px',
+                color: '#28a745'
+              }}>
+                <span style={{ 
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '600'
+                }}>
+                  BẮT ĐẦU
+                </span>
+                <span style={{ fontWeight: '500' }}>{formatDate(s.startDate)}</span>
+              </div>
+              
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px',
+                color: '#dc3545'
+              }}>
+                <span style={{ 
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '600'
+                }}>
+                  KẾT THÚC
+                </span>
+                <span style={{ fontWeight: '500' }}>{formatDate(s.endDate)}</span>
+              </div>
+            </div>
+            
             <button
               onClick={() => handleDeleteSemester(s.id)}
-              style={{ backgroundColor: '#dc3545', color: 'white', padding: '5px 10px' }}
+              style={{ 
+                backgroundColor: '#dc3545', 
+                color: 'white', 
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#c82333'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#dc3545'}
             >
-              Xóa
+              🗑️ Xóa
             </button>
           </div>
         ))

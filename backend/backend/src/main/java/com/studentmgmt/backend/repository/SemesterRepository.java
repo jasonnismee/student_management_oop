@@ -1,5 +1,6 @@
 package com.studentmgmt.backend.repository;
 
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,6 +21,25 @@ public class SemesterRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+
+    // ✅ THÊM METHOD: Cập nhật GPA cho học kỳ
+    public void updateSemesterGpa(Long semesterId, BigDecimal semesterGpa) {
+        String sql = "UPDATE semesters SET semester_gpa = ? WHERE id = ?";
+        jdbcTemplate.update(sql, semesterGpa, semesterId);
+    }
+
+    // ✅ THÊM METHOD NÀY: Cập nhật học kỳ
+    public void update(Semester semester) {
+        String sql = "UPDATE semesters SET user_id = ?, name = ?, start_date = ?, end_date = ?, semester_gpa = ? WHERE id = ?";
+        jdbcTemplate.update(sql, 
+            semester.getUserId(),
+            semester.getName(),
+            semester.getStartDate(),
+            semester.getEndDate(),
+            semester.getSemesterGpa(),
+            semester.getId());
+    }
+
     // ✅ Lấy tất cả học kỳ theo userId
     public List<Semester> findByUserId(Long userId) {
     String sql = "SELECT * FROM semesters WHERE user_id = ? ORDER BY id DESC";
@@ -36,7 +56,7 @@ public class SemesterRepository {
 
     // ✅ Lưu học kỳ mới
     public Long save(Semester semester) {
-        String sql = "INSERT INTO semesters (user_id, name, start_date, end_date) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO semesters (user_id, name, start_date, end_date, semester_gpa) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
@@ -45,6 +65,7 @@ public class SemesterRepository {
             ps.setString(2, semester.getName());
             ps.setObject(3, semester.getStartDate());
             ps.setObject(4, semester.getEndDate());
+            ps.setObject(5, semester.getSemesterGpa());
             return ps;
         }, keyHolder);
 
@@ -78,6 +99,7 @@ public class SemesterRepository {
             semester.setName(rs.getString("name"));
             semester.setStartDate(rs.getDate("start_date") != null ? rs.getDate("start_date").toLocalDate() : null);
             semester.setEndDate(rs.getDate("end_date") != null ? rs.getDate("end_date").toLocalDate() : null);
+            semester.setSemesterGpa(rs.getBigDecimal("semester_gpa"));
             return semester;
         }
     }
