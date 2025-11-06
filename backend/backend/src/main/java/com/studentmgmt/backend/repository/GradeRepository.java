@@ -21,6 +21,15 @@ public class GradeRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+
+
+    // THÊM PHƯƠNG THỨC findAll() - ĐÂY LÀ PHƯƠNG THỨC BỊ THIẾU
+    public List<Grade> findAll() {
+        String sql = "SELECT * FROM grades";
+        return jdbcTemplate.query(sql, new GradeRowMapper());
+    }
+
+
     // Lấy tất cả điểm theo subjectId
     public List<Grade> findBySubjectId(Long subjectId) {
         String sql = "SELECT * FROM grades WHERE subject_id = ?";
@@ -62,8 +71,8 @@ public class GradeRepository {
     public Grade save(Grade grade) {
         if (grade.getId() == null) {
             String sql = """
-                INSERT INTO grades (template_type, score1, score2, score3, score4, created_at, subject_id)
-                VALUES (?, ?, ?, ?, ?, NOW(), ?)
+                INSERT INTO grades (template_type, score1, score2, score3, score4, created_at, subject_id,avg_score,letter_grade, gpa_score)
+                VALUES (?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?)
                 """;
             KeyHolder keyHolder = new GeneratedKeyHolder();
             jdbcTemplate.update(connection -> {
@@ -74,6 +83,9 @@ public class GradeRepository {
                 ps.setObject(4, grade.getScore3());
                 ps.setObject(5, grade.getScore4());
                 ps.setLong(6, grade.getSubjectId());
+                ps.setObject(7, grade.getAvgScore());
+                ps.setString(8, grade.getLetterGrade());
+                ps.setObject(9, grade.getGpaScore());
                 return ps;
             }, keyHolder);
             Number key = keyHolder.getKey();
@@ -82,8 +94,8 @@ public class GradeRepository {
             }
             grade.setId(key.longValue());
         } else {
-            String sql = "UPDATE grades SET score1=?, score2=?, score3=?, score4=? WHERE id=?";
-            jdbcTemplate.update(sql, grade.getScore1(), grade.getScore2(), grade.getScore3(), grade.getScore4(), grade.getId());
+            String sql = "UPDATE grades SET score1=?, score2=?, score3=?, score4=?,avg_score=?,letter_grade=?, gpa_score=? WHERE id=?";
+            jdbcTemplate.update(sql, grade.getScore1(), grade.getScore2(), grade.getScore3(), grade.getScore4(), grade.getAvgScore(), grade.getLetterGrade(), grade.getGpaScore(), grade.getId());
         }
         return grade;
     }
@@ -93,6 +105,26 @@ public class GradeRepository {
         String sql = "DELETE FROM grades WHERE id = ?";
         jdbcTemplate.update(sql, id);
     }
+
+    // 🆕 THÊM METHOD: Xóa tất cả điểm của một môn học
+    public void deleteBySubjectId(Long subjectId) {
+        try {
+            String sql = "DELETE FROM grades WHERE subject_id = ?";
+            int deletedCount = jdbcTemplate.update(sql, subjectId);
+            System.out.println("✅ Đã xóa " + deletedCount + " điểm của môn học ID: " + subjectId);
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi khi xóa điểm của môn học " + subjectId + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+
+    // THÊM PHƯƠNG THỨC CẬP NHẬT ĐIỂM CHỮ
+    public void updateLetterGrade(Long gradeId, String letterGrade) {
+        String sql = "UPDATE grades SET letter_grade = ? WHERE id = ?";
+        jdbcTemplate.update(sql, letterGrade, gradeId);
+    }
+
 
     // RowMapper
     private static class GradeRowMapper implements RowMapper<Grade> {
@@ -107,6 +139,9 @@ public class GradeRepository {
             g.setScore4(rs.getBigDecimal("score4"));
             g.setCreatedAt(rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toLocalDateTime() : null);
             g.setSubjectId(rs.getLong("subject_id"));
+            g.setAvgScore(rs.getBigDecimal("avg_score"));
+            g.setLetterGrade(rs.getString("letter_grade"));
+            g.setGpaScore(rs.getBigDecimal("gpa_score"));
             return g;
         }
     }

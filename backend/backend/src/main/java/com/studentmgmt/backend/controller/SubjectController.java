@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import com.studentmgmt.backend.model.Semester;
 import com.studentmgmt.backend.model.Subject;
 import com.studentmgmt.backend.repository.SubjectRepository;
+import com.studentmgmt.backend.repository.GradeRepository;
 import com.studentmgmt.backend.repository.SemesterRepository;
+import com.studentmgmt.backend.service.SemesterGpaService; 
 
 @RestController
 @RequestMapping("/api/subjects")
@@ -22,6 +24,12 @@ public class SubjectController {
 
     @Autowired
     private SemesterRepository semesterRepository;
+
+    @Autowired
+    private GradeRepository gradeRepository;
+
+    @Autowired
+    private SemesterGpaService semesterGpaService;
 
     // ✅ Lấy danh sách môn học theo học kỳ
     @GetMapping("/semester/{semesterId}")
@@ -69,10 +77,40 @@ public class SubjectController {
         }
     }
 
-    // ✅ Xóa môn học
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSubject(@PathVariable Long id) {
-        subjectRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteSubject(@PathVariable Long id, @RequestParam Long userId) {
+        try {
+            if (!subjectRepository.existsByIdAndUserId(id, userId)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Không có quyền xóa môn học này"));
+            }
+
+            // 🆕 LẤY THÔNG TIN HỌC KỲ TRƯỚC KHI XÓA
+            Subject subject = subjectRepository.findById(id);
+            Long semesterId = null;
+            if (subject != null && subject.getSemester() != null) {
+                semesterId = subject.getSemester().getId();
+                System.out.println("🗑️ Chuẩn bị xóa môn học: " + subject.getName() + " thuộc học kỳ: " + semesterId);
+            }
+
+            // 🆕 XÓA TẤT CẢ ĐIỂM CỦA MÔN HỌC TRƯỚC
+            gradeRepository.deleteBySubjectId(id);
+            System.out.println("✅ Đã xóa tất cả điểm của môn học ID: " + id);
+
+            // XÓA MÔN HỌC
+            subjectRepository.deleteById(id);
+            System.out.println("✅ Đã xóa môn học ID: " + id);
+
+            // 🆕 TỰ ĐỘNG TÍNH LẠI GPA HỌC KỲ
+            if (semesterId != null) {
+                System.out.println("🔄 Tính lại GPA cho học kỳ sau khi xóa môn học: " + semesterId);
+                semesterGpaService.calculateSemesterGpa(semesterId);
+            }
+
+            return ResponseEntity.ok(Map.of("message", "Đã xóa môn học thành công"));
+
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi xóa môn học: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", "Lỗi xóa môn học: " + e.getMessage()));
+        }
     }
 }

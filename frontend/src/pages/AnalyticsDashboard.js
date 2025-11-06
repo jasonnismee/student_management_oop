@@ -34,6 +34,7 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
       setLoading(true);
       const response = await analyticsAPI.getSummary(currentUser.userId);
       setSummary(response.data);
+
     } catch (error) {
       console.error('Error loading analytics:', error);
     } finally {
@@ -111,7 +112,7 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
         type: 'linear',
         display: true,
         position: 'left',
-        max: 10,
+        max: 4,
         min: 0,
         grid: {
           color: 'rgba(0, 0, 0, 0.1)',
@@ -124,7 +125,7 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
           }
         },
         ticks: {
-          stepSize: 1
+          stepSize: 0.5
         }
       },
       y1: {
@@ -147,10 +148,10 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
 
   // Đánh giá học lực
   const getAcademicPerformance = (gpa) => {
-    if (gpa >= 9.0) return { level: 'Xuất sắc', color: '#28a745', icon: '🏆', bgColor: '#d4edda' };
-    if (gpa >= 8.0) return { level: 'Giỏi', color: '#007bff', icon: '⭐', bgColor: '#cce7ff' };
-    if (gpa >= 7.0) return { level: 'Khá', color: '#ffc107', icon: '📈', bgColor: '#fff3cd' };
-    if (gpa >= 5.0) return { level: 'Trung bình', color: '#fd7e14', icon: '📊', bgColor: '#ffe5d0' };
+    if (gpa >= 3.6) return { level: 'Xuất sắc', color: '#28a745', icon: '🏆', bgColor: '#d4edda' };
+    if (gpa >= 3.2) return { level: 'Giỏi', color: '#007bff', icon: '⭐', bgColor: '#cce7ff' };
+    if (gpa >= 2.5) return { level: 'Khá', color: '#ffc107', icon: '📈', bgColor: '#fff3cd' };
+    if (gpa >= 2.0) return { level: 'Trung bình', color: '#fd7e14', icon: '📊', bgColor: '#ffe5d0' };
     return { level: 'Yếu', color: '#dc3545', icon: '📉', bgColor: '#f8d7da' };
   };
 
@@ -158,7 +159,7 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
 
   // Phân tích chi tiết và khuyến nghị
   const getDetailedAnalysis = (gpa) => {
-    if (gpa >= 9.0) {
+    if (gpa >= 3.6) {
       return {
         title: "🎉 THÀNH TÍCH XUẤT SẮC",
         description: "Bạn đang thể hiện sự xuất sắc trong học tập!",
@@ -174,7 +175,7 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
         ],
         color: '#28a745'
       };
-    } else if (gpa >= 8.0) {
+    } else if (gpa >= 3.2) {
       return {
         title: "⭐ KẾT QUẢ TỐT",
         description: "Bạn có kết quả học tập rất tốt!",
@@ -190,7 +191,7 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
         ],
         color: '#007bff'
       };
-    } else if (gpa >= 7.0) {
+    } else if (gpa >= 2.5) {
       return {
         title: "📈 TIẾN BỘ KHÁ",
         description: "Bạn đang có kết quả học tập khá tốt!",
@@ -206,7 +207,7 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
         ],
         color: '#ffc107'
       };
-    } else if (gpa >= 5.0) {
+    } else if (gpa >= 2.0) {
       return {
         title: "⚠️ CẦN CẢI THIỆN",
         description: "Kết quả học tập cần được cải thiện!",
@@ -264,7 +265,7 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
           transition: 'transform 0.2s ease'
         }}>
           <div style={{ fontSize: '2em', marginBottom: '10px' }}>{performance.icon}</div>
-          <h3 style={{ marginBottom: '15px', color: '#555' }}>GPA Tổng thể</h3>
+          <h3 style={{ marginBottom: '15px', color: '#555' }}>CPA</h3>
           <div style={{ fontSize: '3em', fontWeight: 'bold', color: performance.color, marginBottom: '10px' }}>
             {summary.overallGpa.toFixed(2)}
           </div>
@@ -279,7 +280,7 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
           }}>
             {performance.level}
           </div>
-          <div style={{ marginTop: '10px', color: '#666', fontSize: '0.9em' }}>Trên thang điểm 10</div>
+          <div style={{ marginTop: '10px', color: '#666', fontSize: '0.9em' }}>/4</div>
         </div>
 
         <div style={{ 
@@ -539,11 +540,13 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
             gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
             gap: '20px' 
           }}>
-            {summary.chartData.labels.map((label, index) => {
+            {summary.chartData?.labels?.map((label, index) => {
+
+              // Lấy GPA từ database (đã là thang điểm 4)
               const semesterGPA = summary.chartData.gpaData[index];
               const semesterPerformance = getAcademicPerformance(semesterGPA);
               const subjectCount = summary.chartData.subjectCounts[index];
-              
+
               return (
                 <div key={index} style={{
                   backgroundColor: 'white',
@@ -607,13 +610,13 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
                         fontWeight: 'bold',
                         color: semesterPerformance.color
                       }}>
-                        {semesterGPA}
+                        {typeof semesterGPA === 'number' ? semesterGPA.toFixed(2) : 'N/A'}
                       </div>
                       <div style={{ 
                         fontSize: '0.8em', 
                         color: '#999'
                       }}>
-                        /10
+                        /4
                       </div>
                     </div>
 
@@ -657,7 +660,7 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
                       color: '#666'
                     }}>
                       <span>Mức độ hoàn thành</span>
-                      <span>{Math.min(100, (semesterGPA / 10) * 100).toFixed(0)}%</span>
+                      <span>{Math.min(100, (semesterGPA / 4) * 100).toFixed(0)}%</span>
                     </div>
                     <div style={{
                       width: '100%',
@@ -667,7 +670,7 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
                       overflow: 'hidden'
                     }}>
                       <div style={{
-                        width: `${Math.min(100, (semesterGPA / 10) * 100)}%`,
+                        width: `${Math.min(100, (semesterGPA / 4) * 100)}%`,
                         height: '100%',
                         backgroundColor: semesterPerformance.color,
                         borderRadius: '3px',
@@ -689,10 +692,11 @@ const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM 
                       textAlign: 'center',
                       fontWeight: '500'
                     }}>
-                      {semesterGPA >= 8.0 ? '🎯 Mục tiêu hoàn thành xuất sắc' :
-                       semesterGPA >= 7.0 ? '📈 Tiến bộ ổn định' :
-                       semesterGPA >= 5.0 ? '🔄 Cần cải thiện' :
-                       '⚠️ Cần tập trung cao độ'}
+                      {semesterGPA >= 3.6 ? '🎯 Mục tiêu hoàn thành xuất sắc!' :
+                       semesterGPA >= 3.2 ? '📈 Chưa tài đâu, cần cố hơn nữa !!' :
+                       semesterGPA >= 2.5 ? '🔄 Lọ ít thôi, tập trung học !!' :
+                       semesterGPA >= 2.0 ? '⚠️ Cần tập trung cao độ' :
+                       '🚨 Nghỉ học luôn đi bro 😔😔😔'}
                     </div>
                   </div>
                 </div>

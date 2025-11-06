@@ -18,6 +18,19 @@ const GradeManagement = ({ currentUser, onGradeChange }) => { // 🆕 THÊM onGr
     score4: ''
   });
 
+
+  // Thêm hàm này vào component của bạn
+  const getColorByGrade = (letterGrade) => {
+    switch(letterGrade) {
+      case 'A+': case 'A': case 'B+': case 'B': return '#28a745'; // Xanh lá - Tốt
+      case 'C+': return '#ffc107'; // Vàng - Khá  
+      case 'C': case 'D+': return '#fd7e14'; // Cam - Trung bình
+      case 'D': return '#dc3545'; // Đỏ - Yếu
+      case 'F': return '#6c757d'; // Xám - Trượt
+      default: return '#007bff';
+    }
+  };
+
   const currentTemplate = getTemplateById(formData.templateType) || gradeTemplates[0];
 
   const loadSemesters = useCallback(async () => {
@@ -257,9 +270,24 @@ const GradeManagement = ({ currentUser, onGradeChange }) => { // 🆕 THÊM onGr
           border: '2px solid #007bff',
           textAlign: 'center'
         }}>
-          <h3 style={{ margin: 0, color: '#007bff' }}>
-            Điểm trung bình môn: <span style={{ fontSize: '1.5em', fontWeight: 'bold' }}>{calculateOverallAverage()}/10</span>
-          </h3>
+          {/* Lấy điểm từ grade đầu tiên trong database */}
+          {grades[0].avgScore && (
+            <>
+              <h3 style={{ margin: 0, color: '#007bff' }}>
+                Điểm TB: <span style={{ fontSize: '1.5em', fontWeight: 'bold' }}>{grades[0].avgScore}</span> 
+              </h3>
+              {grades[0].letterGrade && (
+                <h4 style={{ 
+                  margin: '10px 0 0 0', 
+                  color: getColorByGrade(grades[0].letterGrade),
+                  fontSize: '1.3em',
+                  fontWeight: 'bold'
+                }}>
+                  Dạng chữ: {grades[0].letterGrade}
+                </h4>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -502,18 +530,7 @@ const GradeManagement = ({ currentUser, onGradeChange }) => { // 🆕 THÊM onGr
                       </div>
                     ))}
                   </div>
-                  
-                  <div style={{ 
-                    padding: '12px',
-                    backgroundColor: '#e7f3ff',
-                    borderRadius: '8px',
-                    textAlign: 'center',
-                    border: '1px solid #007bff'
-                  }}>
-                    <strong style={{ color: '#007bff', fontSize: '1.1em' }}>
-                      Điểm trung bình: {gradeAverage}/10
-                    </strong>
-                  </div>
+                
                 </div>
               );
             })}

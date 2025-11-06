@@ -21,6 +21,14 @@ public class SubjectRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+
+    // ✅ THÊM METHOD NÀY: Tìm môn học theo ID
+    public Subject findById(Long id) {
+        String sql = "SELECT * FROM subjects WHERE id = ?";
+        List<Subject> subjects = jdbcTemplate.query(sql, new SubjectRowMapper(), id);
+        return subjects.isEmpty() ? null : subjects.get(0);
+    }
+
     // ✅ Lấy môn học theo học kỳ
     public List<Subject> findBySemesterId(Long semesterId) {
         String sql = "SELECT * FROM subjects WHERE semester_id = ?";
@@ -78,6 +86,13 @@ public class SubjectRepository {
     public void deleteById(Long id) {
         String sql = "DELETE FROM subjects WHERE id = ?";
         jdbcTemplate.update(sql, id);
+    }
+
+
+    // 🆕 THÊM METHOD: Xóa tất cả môn học của một học kỳ
+    public void deleteBySemesterId(Long semesterId) {
+        String sql = "DELETE FROM subjects WHERE semester_id = ?";
+        jdbcTemplate.update(sql, semesterId);
     }
 
     // ✅ RowMapper

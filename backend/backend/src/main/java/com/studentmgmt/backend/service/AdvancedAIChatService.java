@@ -115,13 +115,13 @@ public class AdvancedAIChatService {
         
             // Lấy học kỳ với thông tin đầy đủ và sắp xếp theo thời gian
             String currentSemesterSql = "SELECT id, name, start_date, end_date FROM semesters " +
-                                       "WHERE user_id = ? " +
-                                       "ORDER BY " +
-                                       "CASE " +
-                                       "  WHEN start_date <= CURDATE() AND end_date >= CURDATE() THEN 1 " +
-                                       "  WHEN start_date > CURDATE() THEN 2 " +
-                                       "  ELSE 3 " +
-                                       "END, start_date DESC";
+                                    "WHERE user_id = ? " +
+                                    "ORDER BY " +
+                                    "CASE " +
+                                    "  WHEN start_date <= CURDATE() AND end_date >= CURDATE() THEN 1 " +
+                                    "  WHEN start_date > CURDATE() THEN 2 " +
+                                    "  ELSE 3 " +
+                                    "END, start_date DESC";
             
             List<Map<String, Object>> semesters = jdbcTemplate.queryForList(currentSemesterSql, user.getId());
             
@@ -134,7 +134,7 @@ public class AdvancedAIChatService {
             currentSemesterInfo.append("🎯 HỌC KỲ HIỆN TẠI/GẦN NHẤT:\n");
             currentSemesterInfo.append("• Tên: ").append(currentSemester.get("name")).append("\n");
             currentSemesterInfo.append("• Thời gian: ").append(currentSemester.get("start_date"))
-                              .append(" → ").append(currentSemester.get("end_date")).append("\n");
+                            .append(" → ").append(currentSemester.get("end_date")).append("\n");
             
             // Kiểm tra xem có phải học kỳ hiện tại không
             java.sql.Date startDate = (java.sql.Date) currentSemester.get("start_date");
@@ -151,12 +151,13 @@ public class AdvancedAIChatService {
                 }
             }
             
-            // Lấy môn học của học kỳ hiện tại
+            // Lấy môn học của học kỳ hiện tại - SỬA: THÊM avg_score và letter_grade
             Long semesterId = (Long) currentSemester.get("id");
             String subjectSql = "SELECT s.name, s.subject_code, s.credits, " +
-                               "g.score1, g.score2, g.score3, g.score4, g.template_type " +
-                               "FROM subjects s LEFT JOIN grades g ON s.id = g.subject_id " +
-                               "WHERE s.semester_id = ?";
+                            "g.score1, g.score2, g.score3, g.score4, g.template_type, " +
+                            "g.avg_score, g.letter_grade " + // ✅ THÊM 2 CỘT MỚI
+                            "FROM subjects s LEFT JOIN grades g ON s.id = g.subject_id " +
+                            "WHERE s.semester_id = ?";
             
             List<Map<String, Object>> subjects = jdbcTemplate.queryForList(subjectSql, semesterId);
             
@@ -166,27 +167,54 @@ public class AdvancedAIChatService {
             } else {
                 for (Map<String, Object> subject : subjects) {
                     currentSemesterInfo.append("  - ").append(subject.get("name"))
-                                     .append(" (").append(subject.get("credits")).append(" tín chỉ)");
+                                    .append(" (").append(subject.get("credits")).append(" tín chỉ)");
+                                    
                     
-                    // Thêm điểm nếu có
-                    boolean hasScores = subject.get("score1") != null || subject.get("score2") != null || 
-                                       subject.get("score3") != null || subject.get("score4") != null;
-                    
-                    if (hasScores) {
-                        currentSemesterInfo.append(" - Điểm: ");
-                        List<String> scores = new ArrayList<>();
-                        if (subject.get("score1") != null) scores.add(String.format("%.1f", ((Number) subject.get("score1")).doubleValue()));
-                        if (subject.get("score2") != null) scores.add(String.format("%.1f", ((Number) subject.get("score2")).doubleValue()));
-                        if (subject.get("score3") != null) scores.add(String.format("%.1f", ((Number) subject.get("score3")).doubleValue()));
-                        if (subject.get("score4") != null) scores.add(String.format("%.1f", ((Number) subject.get("score4")).doubleValue()));
+                    // ✅ HIỂN THỊ ĐIỂM TRUNG BÌNH VÀ ĐIỂM CHỮ NẾU CÓ
+                    if (subject.get("avg_score") != null) {
+                        double avgScore = ((Number) subject.get("avg_score")).doubleValue();
+                        String letterGrade = (String) subject.get("letter_grade");
                         
-                        currentSemesterInfo.append(String.join(" | ", scores));
-                        
-                        if (subject.get("template_type") != null) {
-                            currentSemesterInfo.append(" (").append(subject.get("template_type")).append(")");
+                        currentSemesterInfo.append(" - ĐTB: ").append(String.format("%.2f", avgScore));
+                        if (letterGrade != null) {
+                            currentSemesterInfo.append(" (").append(letterGrade).append(")");
                         }
+                        
+                        // Vẫn hiển thị điểm thành phần nếu muốn
+                        boolean showDetails = false; // Có thể đổi thành true nếu muốn hiển thị chi tiết
+                        if (showDetails) {
+                            List<String> scores = new ArrayList<>();
+                            if (subject.get("score1") != null) scores.add(String.format("%.1f", ((Number) subject.get("score1")).doubleValue()));
+                            if (subject.get("score2") != null) scores.add(String.format("%.1f", ((Number) subject.get("score2")).doubleValue()));
+                            if (subject.get("score3") != null) scores.add(String.format("%.1f", ((Number) subject.get("score3")).doubleValue()));
+                            if (subject.get("score4") != null) scores.add(String.format("%.1f", ((Number) subject.get("score4")).doubleValue()));
+                            
+                            if (!scores.isEmpty()) {
+                                currentSemesterInfo.append(" [Chi tiết: ").append(String.join(" | ", scores)).append("]");
+                            }
+                        }
+                        
                     } else {
-                        currentSemesterInfo.append(" - Chưa có điểm");
+                        // Nếu chưa có điểm TB, hiển thị điểm thành phần như cũ
+                        boolean hasScores = subject.get("score1") != null || subject.get("score2") != null || 
+                                        subject.get("score3") != null || subject.get("score4") != null;
+                        
+                        if (hasScores) {
+                            currentSemesterInfo.append(" - Điểm: ");
+                            List<String> scores = new ArrayList<>();
+                            if (subject.get("score1") != null) scores.add(String.format("%.1f", ((Number) subject.get("score1")).doubleValue()));
+                            if (subject.get("score2") != null) scores.add(String.format("%.1f", ((Number) subject.get("score2")).doubleValue()));
+                            if (subject.get("score3") != null) scores.add(String.format("%.1f", ((Number) subject.get("score3")).doubleValue()));
+                            if (subject.get("score4") != null) scores.add(String.format("%.1f", ((Number) subject.get("score4")).doubleValue()));
+                            
+                            currentSemesterInfo.append(String.join(" | ", scores));
+                            
+                            if (subject.get("template_type") != null) {
+                                currentSemesterInfo.append(" (").append(subject.get("template_type")).append(")");
+                            }
+                        } else {
+                            currentSemesterInfo.append(" - Chưa có điểm");
+                        }
                     }
                     currentSemesterInfo.append("\n");
                 }
@@ -199,65 +227,12 @@ public class AdvancedAIChatService {
         
         return currentSemesterInfo.toString();
     }
-    
-    private String getLearningStatistics(User user) {
-        StringBuilder stats = new StringBuilder();
-        
-        try {
-            if (user == null) {
-                stats.append("• Chưa có thông tin user để lấy thống kê\n");
-                return stats.toString();
-            }
-            
-            // Tổng số môn học
-            String subjectCountSql = "SELECT COUNT(*) FROM subjects WHERE semester_id IN " +
-                                   "(SELECT id FROM semesters WHERE user_id = ?)";
-            Integer totalSubjects = jdbcTemplate.queryForObject(subjectCountSql, Integer.class, user.getId());
-            stats.append("• Tổng môn học: ").append(totalSubjects != null ? totalSubjects : 0).append("\n");
-            
-            // Tổng số tín chỉ
-            String creditSql = "SELECT SUM(credits) FROM subjects WHERE semester_id IN " +
-                             "(SELECT id FROM semesters WHERE user_id = ?)";
-            Integer totalCredits = jdbcTemplate.queryForObject(creditSql, Integer.class, user.getId());
-            stats.append("• Tổng tín chỉ: ").append(totalCredits != null ? totalCredits : 0).append("\n");
-            
-            // Số học kỳ
-            String semesterSql = "SELECT COUNT(*) FROM semesters WHERE user_id = ?";
-            Integer totalSemesters = jdbcTemplate.queryForObject(semesterSql, Integer.class, user.getId());
-            stats.append("• Tổng học kỳ: ").append(totalSemesters != null ? totalSemesters : 0).append("\n");
-            
-            // Điểm trung bình tổng
-            String avgGradeSql = "SELECT AVG((COALESCE(g.score1,0) + COALESCE(g.score2,0) + COALESCE(g.score3,0) + COALESCE(g.score4,0)) / " +
-                               "CASE WHEN g.template_type = '10-10-80' THEN 3 " +
-                               "     WHEN g.template_type = '10-10-10-70' THEN 4 " +
-                               "     WHEN g.template_type = '10-10-30-50' THEN 4 " +
-                               "     WHEN g.template_type = '10-20-20-50' THEN 4 " +
-                               "     ELSE 1 END) " +
-                               "FROM grades g " +
-                               "WHERE g.subject_id IN (SELECT id FROM subjects WHERE semester_id IN " +
-                               "(SELECT id FROM semesters WHERE user_id = ?))";
-            try {
-                Double avgGrade = jdbcTemplate.queryForObject(avgGradeSql, Double.class, user.getId());
-                if (avgGrade != null && avgGrade > 0) {
-                    stats.append("• Điểm TB tổng: ").append(String.format("%.2f", avgGrade)).append("\n");
-                }
-            } catch (Exception e) {
-                // Bỏ qua nếu không tính được điểm TB
-            }
-            
-        } catch (Exception e) {
-            stats.append("• Chưa có thống kê chi tiết\n");
-            System.err.println("Lỗi khi lấy thống kê: " + e.getMessage());
-        }
-        
-        return stats.toString();
-    }
-    
+
     private String getAllAcademicData(User user) {
         StringBuilder data = new StringBuilder();
         
         try {
-            // Lấy tất cả học kỳ và môn học - SỬA: Thêm ORDER BY
+            // Lấy tất cả học kỳ và môn học
             String semesterSql = "SELECT id, name, start_date, end_date FROM semesters";
             if (user != null) {
                 semesterSql += " WHERE user_id = " + user.getId();
@@ -278,12 +253,13 @@ public class AdvancedAIChatService {
                 data.append("   Thời gian: ").append(semester.get("start_date"))
                     .append(" → ").append(semester.get("end_date")).append("\n");
                 
-                // Lấy môn học trong học kỳ này
+                // Lấy môn học trong học kỳ này - SỬA: THÊM avg_score và letter_grade
                 Long semesterId = (Long) semester.get("id");
                 String subjectSql = "SELECT s.id, s.name, s.subject_code, s.credits, " +
-                                   "g.template_type, g.score1, g.score2, g.score3, g.score4 " +
-                                   "FROM subjects s LEFT JOIN grades g ON s.id = g.subject_id " +
-                                   "WHERE s.semester_id = ?";
+                                "g.template_type, g.score1, g.score2, g.score3, g.score4, " +
+                                "g.avg_score, g.letter_grade " + // ✅ THÊM 2 CỘT MỚI
+                                "FROM subjects s LEFT JOIN grades g ON s.id = g.subject_id " +
+                                "WHERE s.semester_id = ?";
                 
                 List<Map<String, Object>> subjects = jdbcTemplate.queryForList(subjectSql, semesterId);
                 
@@ -296,35 +272,76 @@ public class AdvancedAIChatService {
                     data.append("   📖 ").append(subject.get("name"))
                         .append(" (Mã: ").append(subject.get("subject_code")).append(")")
                         .append(" - ").append(subject.get("credits")).append(" tín chỉ\n");
+
+                        // ✅ HIỂN THỊ TEMPLATE
+                    String templateType = (String) subject.get("template_type");
+                    if (templateType != null) {
+                        data.append(" [").append(templateType).append("]");
+                    }
+                    data.append("\n");
                     
-                    // Thêm điểm số nếu có - SỬA: Hiển thị điểm thành phần
-                    if (subject.get("score1") != null || subject.get("score2") != null || 
-                        subject.get("score3") != null || subject.get("score4") != null) {
+                    // ✅ HIỂN THỊ ĐIỂM TRUNG BÌNH VÀ ĐIỂM CHỮ NẾU CÓ
+                    if (subject.get("avg_score") != null) {
+                        double avgScore = ((Number) subject.get("avg_score")).doubleValue();
+                        String letterGrade = (String) subject.get("letter_grade");
                         
-                        // Hiển thị từng điểm thành phần
-                        List<String> scoreDetails = new ArrayList<>();
-                        if (subject.get("score1") != null) {
-                            scoreDetails.add("Điểm thành phần 1: " + String.format("%.2f", ((Number) subject.get("score1")).doubleValue()));
+                        data.append("      Điểm TB: ").append(String.format("%.2f", avgScore));
+                        if (letterGrade != null) {
+                            data.append(" (").append(letterGrade).append(")");
                         }
-                        if (subject.get("score2") != null) {
-                            scoreDetails.add("Điểm thành phần 2: " + String.format("%.2f", ((Number) subject.get("score2")).doubleValue()));
-                        }
-                        if (subject.get("score3") != null) {
-                            scoreDetails.add("Điểm thành phần 3: " + String.format("%.2f", ((Number) subject.get("score3")).doubleValue()));
-                        }
-                        if (subject.get("score4") != null) {
-                            scoreDetails.add("Điểm thành phần 4: " + String.format("%.2f", ((Number) subject.get("score4")).doubleValue()));
+                        data.append("\n");
+                        
+                        // Hiển thị điểm thành phần nếu muốn
+                        boolean showScoreDetails = true; // Có thể đổi thành false nếu chỉ muốn hiển thị điểm TB
+                        if (showScoreDetails) {
+                            List<String> scoreDetails = new ArrayList<>();
+                            if (subject.get("score1") != null) {
+                                scoreDetails.add("Điểm 1: " + String.format("%.2f", ((Number) subject.get("score1")).doubleValue()));
+                            }
+                            if (subject.get("score2") != null) {
+                                scoreDetails.add("Điểm 2: " + String.format("%.2f", ((Number) subject.get("score2")).doubleValue()));
+                            }
+                            if (subject.get("score3") != null) {
+                                scoreDetails.add("Điểm 3: " + String.format("%.2f", ((Number) subject.get("score3")).doubleValue()));
+                            }
+                            if (subject.get("score4") != null) {
+                                scoreDetails.add("Điểm 4: " + String.format("%.2f", ((Number) subject.get("score4")).doubleValue()));
+                            }
+                            
+                            if (!scoreDetails.isEmpty()) {
+                                data.append("      Điểm thành phần: ").append(String.join(" | ", scoreDetails)).append("\n");
+                            }
                         }
                         
-                        for (String scoreDetail : scoreDetails) {
-                            data.append("      ").append(scoreDetail).append("\n");
-                        }
-                        
-                        if (subject.get("template_type") != null) {
-                            data.append("      Template: ").append(subject.get("template_type")).append("\n");
-                        }
                     } else {
-                        data.append("      Chưa có điểm\n");
+                        // Nếu chưa có điểm TB, hiển thị điểm thành phần như cũ
+                        if (subject.get("score1") != null || subject.get("score2") != null || 
+                            subject.get("score3") != null || subject.get("score4") != null) {
+                            
+                            List<String> scoreDetails = new ArrayList<>();
+                            if (subject.get("score1") != null) {
+                                scoreDetails.add("Điểm 1: " + String.format("%.2f", ((Number) subject.get("score1")).doubleValue()));
+                            }
+                            if (subject.get("score2") != null) {
+                                scoreDetails.add("Điểm 2: " + String.format("%.2f", ((Number) subject.get("score2")).doubleValue()));
+                            }
+                            if (subject.get("score3") != null) {
+                                scoreDetails.add("Điểm 3: " + String.format("%.2f", ((Number) subject.get("score3")).doubleValue()));
+                            }
+                            if (subject.get("score4") != null) {
+                                scoreDetails.add("Điểm 4: " + String.format("%.2f", ((Number) subject.get("score4")).doubleValue()));
+                            }
+                            
+                            for (String scoreDetail : scoreDetails) {
+                                data.append("      ").append(scoreDetail).append("\n");
+                            }
+                            
+                            if (subject.get("template_type") != null) {
+                                data.append("      Template: ").append(subject.get("template_type")).append("\n");
+                            }
+                        } else {
+                            data.append("      Chưa có điểm\n");
+                        }
                     }
                 }
             }
@@ -335,6 +352,67 @@ public class AdvancedAIChatService {
         }
         
         return data.toString();
+    }
+
+    private String getLearningStatistics(User user) {
+        StringBuilder stats = new StringBuilder();
+        
+        try {
+            if (user == null) {
+                stats.append("• Chưa có thông tin user để lấy thống kê\n");
+                return stats.toString();
+            }
+            
+            // Tổng số môn học
+            String subjectCountSql = "SELECT COUNT(*) FROM subjects WHERE semester_id IN " +
+                                "(SELECT id FROM semesters WHERE user_id = ?)";
+            Integer totalSubjects = jdbcTemplate.queryForObject(subjectCountSql, Integer.class, user.getId());
+            stats.append("• Tổng môn học: ").append(totalSubjects != null ? totalSubjects : 0).append("\n");
+            
+            // Tổng số tín chỉ
+            String creditSql = "SELECT SUM(credits) FROM subjects WHERE semester_id IN " +
+                            "(SELECT id FROM semesters WHERE user_id = ?)";
+            Integer totalCredits = jdbcTemplate.queryForObject(creditSql, Integer.class, user.getId());
+            stats.append("• Tổng tín chỉ: ").append(totalCredits != null ? totalCredits : 0).append("\n");
+            
+            // Số học kỳ
+            String semesterSql = "SELECT COUNT(*) FROM semesters WHERE user_id = ?";
+            Integer totalSemesters = jdbcTemplate.queryForObject(semesterSql, Integer.class, user.getId());
+            stats.append("• Tổng học kỳ: ").append(totalSemesters != null ? totalSemesters : 0).append("\n");
+            
+            // ✅ SỬA: Điểm trung bình tổng từ cột avg_score (chính xác hơn)
+            String avgGradeSql = "SELECT AVG(g.avg_score) FROM grades g " +
+                            "WHERE g.subject_id IN (SELECT id FROM subjects WHERE semester_id IN " +
+                            "(SELECT id FROM semesters WHERE user_id = ?)) AND g.avg_score IS NOT NULL";
+            try {
+                Double avgGrade = jdbcTemplate.queryForObject(avgGradeSql, Double.class, user.getId());
+                if (avgGrade != null && avgGrade > 0) {
+                    stats.append("• Điểm TB tổng: ").append(String.format("%.2f", avgGrade)).append("\n");
+                    
+                    // ✅ THÊM: Điểm chữ trung bình
+                    String letterGradeSql = "SELECT g.letter_grade, COUNT(*) as count FROM grades g " +
+                                        "WHERE g.subject_id IN (SELECT id FROM subjects WHERE semester_id IN " +
+                                        "(SELECT id FROM semesters WHERE user_id = ?)) AND g.letter_grade IS NOT NULL " +
+                                        "GROUP BY g.letter_grade ORDER BY count DESC LIMIT 1";
+                    try {
+                        Map<String, Object> mostCommonGrade = jdbcTemplate.queryForMap(letterGradeSql, user.getId());
+                        if (mostCommonGrade != null && mostCommonGrade.get("letter_grade") != null) {
+                            stats.append("• Điểm chữ phổ biến: ").append(mostCommonGrade.get("letter_grade")).append("\n");
+                        }
+                    } catch (Exception e) {
+                        // Bỏ qua nếu không lấy được điểm chữ phổ biến
+                    }
+                }
+            } catch (Exception e) {
+                // Bỏ qua nếu không tính được điểm TB
+            }
+            
+        } catch (Exception e) {
+            stats.append("• Chưa có thống kê chi tiết\n");
+            System.err.println("Lỗi khi lấy thống kê: " + e.getMessage());
+        }
+        
+        return stats.toString();
     }
     
     private User findUser(ChatRequest request) {

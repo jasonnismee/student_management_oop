@@ -1,6 +1,89 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { subjectAPI, semesterAPI } from '../services/api';
 
+
+// Thêm component hiển thị điểm chữ
+const DiemChuDisplay = ({ subjectId }) => {
+  const [grade, setGrade] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (subjectId) {
+      fetchGradeBySubject();
+    }
+  }, [subjectId]);
+
+  const fetchGradeBySubject = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/grades/subject/${subjectId}`);
+      if (response.ok) {
+        const grades = await response.json();
+        // Lấy grade đầu tiên
+        if (grades.length > 0) {
+          setGrade(grades[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi lấy điểm:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ 
+        color: '#6c757d',
+        fontSize: '12px'
+      }}>
+        Đang tải...
+      </div>
+    );
+  }
+
+  if (!grade || !grade.letterGrade) {
+    return (
+      <div style={{ 
+        color: '#6c757d',
+        fontWeight: 'bold',
+        fontSize: '14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px'
+      }}>
+        <span>📚</span>
+        <span>Chưa có điểm</span>
+      </div>
+    );
+  }
+
+  // Màu sắc theo điểm chữ
+  const getColorByGrade = (letterGrade) => {
+    switch(letterGrade) {
+      case 'A+': case 'A': case 'B+': case 'B': return '#28a745';
+      case 'C+': return '#ffc107';
+      case 'C': case 'D+': return '#fd7e14';
+      case 'D': return '#dc3545';
+      case 'F': return '#6c757d';
+      default: return '#28a745';
+    }
+  };
+
+  return (
+    <div style={{ 
+      color: getColorByGrade(grade.letterGrade),
+      fontWeight: 'bold',
+      fontSize: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px'
+    }}>
+      <span>⭐</span>
+      <span>Điểm: {grade.letterGrade}</span>
+    </div>
+  );
+};
+
 const SubjectManagement = ({ currentUser }) => {
   const [semesters, setSemesters] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -445,7 +528,7 @@ const SubjectManagement = ({ currentUser }) => {
                   alignItems: 'center',
                   marginTop: '20px'
                 }}>
-                  <div style={{ 
+                  {/* <div style={{ 
                     color: '#28a745',
                     fontWeight: 'bold',
                     fontSize: '14px',
@@ -455,7 +538,8 @@ const SubjectManagement = ({ currentUser }) => {
                   }}>
                     <span>📚</span>
                     <span>Môn học</span>
-                  </div>
+                  </div> */}
+                  <DiemChuDisplay subjectId={subject.id} />
                   <button 
                     onClick={() => handleDeleteSubject(subject.id)}
                     style={{ 
