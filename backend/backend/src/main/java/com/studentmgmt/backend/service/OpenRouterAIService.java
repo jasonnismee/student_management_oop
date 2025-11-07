@@ -24,20 +24,11 @@ public class OpenRouterAIService {
 
     public String getAIResponse(String userMessage, String context) {
         try {
-            System.out.println("=== OPENROUTER AI SERVICE START ===");
-            System.out.println("📝 User message: " + userMessage);
-            System.out.println("📊 Context length: " + (context != null ? context.length() : 0));
-            
             // Sử dụng OpenRouter API
             String response = callOpenRouterAPI(userMessage, context);
-            
-            System.out.println("✅ OpenRouter response length: " + response.length());
-            System.out.println("=== OPENROUTER AI SERVICE END ===");
             return response;
                     
         } catch (Exception e) {
-            System.err.println("❌ LỖI OPENROUTER SERVICE: " + e.getMessage());
-            e.printStackTrace();
             return getFallbackResponse(userMessage, context);
         }
     }
@@ -50,8 +41,6 @@ public class OpenRouterAIService {
             // Tạo request body
             String requestBody = createRequestBody(userMessage, context);
             
-            System.out.println("🔗 API URL: " + OPENROUTER_API_URL);
-            
             httpPost.setHeader("Content-Type", "application/json");
             httpPost.setHeader("Authorization", "Bearer " + openrouterApiKey);
             httpPost.setHeader("HTTP-Referer", "http://localhost:3000"); // Required by OpenRouter
@@ -60,16 +49,12 @@ public class OpenRouterAIService {
             httpPost.setEntity(new StringEntity(requestBody, "UTF-8"));
             
             // Gửi request
-            System.out.println("🔄 Đang gửi request đến OpenRouter API...");
             CloseableHttpResponse response = httpClient.execute(httpPost);
             
             int statusCode = response.getStatusLine().getStatusCode();
             String responseBody = EntityUtils.toString(response.getEntity());
             
-            System.out.println("📥 Response status: " + statusCode);
-            
             if (statusCode != 200) {
-                System.err.println("❌ Response error: " + responseBody);
                 throw new RuntimeException("OpenRouter API returned status: " + statusCode);
             }
             
@@ -85,7 +70,7 @@ public class OpenRouterAIService {
             try {
                 httpClient.close();
             } catch (Exception e) {
-                System.err.println("Lỗi khi đóng HTTP client: " + e.getMessage());
+                // Log error silently
             }
         }
     }

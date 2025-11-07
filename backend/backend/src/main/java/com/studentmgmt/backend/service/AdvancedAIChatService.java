@@ -26,19 +26,11 @@ public class AdvancedAIChatService {
     
     public ChatResponse processAdvancedMessage(ChatRequest request) {
         try {
-            System.out.println("=== BẮT ĐẦU XỬ LÝ TIN NHẮN ===");
-            System.out.println("📝 Message: " + request.getMessage());
-            System.out.println("👤 Student ID: " + request.getStudentId());
-            System.out.println("🔢 Student Code: " + request.getStudentCode());
-            
             // 1. Lấy thông tin từ database
             String databaseContext = buildSmartContext(request);
-            System.out.println("📊 Database context length: " + (databaseContext != null ? databaseContext.length() : 0));
             
             // 2. Gọi OpenRouter API
-            System.out.println("🔄 Đang gọi OpenRouter Service...");
             String aiResponse = openRouterAIService.getAIResponse(request.getMessage(), databaseContext);
-            System.out.println("✅ OpenRouter response received");
             
             // 3. Lưu lịch sử
             saveChatHistory(request, aiResponse);
@@ -49,13 +41,9 @@ public class AdvancedAIChatService {
             response.setStudentId(request.getStudentId());
             response.setTimestamp(LocalDateTime.now().toString());
             
-            System.out.println("=== KẾT THÚC XỬ LÝ THÀNH CÔNG ===");
             return response;
             
         } catch (Exception e) {
-            System.err.println("❌ LỖI TRONG processAdvancedMessage: " + e.getMessage());
-            e.printStackTrace();
-            
             String errorResponse = "Xin lỗi, có lỗi xảy ra trong hệ thống. Chi tiết: " + e.getMessage();
             
             ChatResponse error = new ChatResponse();
@@ -443,10 +431,9 @@ public class AdvancedAIChatService {
             );
             
             chatMessageRepository.save(chatMessage);
-            System.out.println("💾 Đã lưu lịch sử chat");
             
         } catch (Exception e) {
-            System.err.println("Lỗi khi lưu lịch sử chat: " + e.getMessage());
+            // Log error silently
         }
     }
 }
