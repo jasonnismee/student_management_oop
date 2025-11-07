@@ -20,8 +20,6 @@ import com.studentmgmt.backend.repository.SubjectRepository;
 @Service
 public class AnalyticsService {
 
-    @Autowired
-    private GradeRepository gradeRepository;
 
     @Autowired
     private SubjectRepository subjectRepository;
@@ -29,29 +27,6 @@ public class AnalyticsService {
     @Autowired
     private SemesterRepository semesterRepository;
 
-    @Autowired
-    private SemesterGpaService semesterGpaService;
-
-    // ==============================
-    // 1️⃣ TÍNH ĐIỂM TRUNG BÌNH MÔN
-    // ==============================
-    public Double calculateSubjectAverage(Long subjectId) {
-        List<Grade> grades = gradeRepository.findBySubjectId(subjectId);
-        if (grades.isEmpty()) return 0.0;
-
-        double totalWeightedScore = 0;
-        double totalWeight = 0;
-
-        for (Grade grade : grades) {
-            Double gradeAverage = calculateGradeAverage(grade);
-            if (gradeAverage > 0) {
-                totalWeightedScore += gradeAverage;
-                totalWeight += 1; // Mỗi bộ điểm có trọng số bằng nhau
-            }
-        }
-
-        return totalWeight > 0 ? round(totalWeightedScore / totalWeight) : 0.0;
-    }
 
     // ============================
     // 2️⃣ LẤY GPA HỌC KỲ TỪ DATABASE
@@ -116,19 +91,10 @@ public class AnalyticsService {
                 totalWeightedScore += semesterGpa.doubleValue() * semesterCredits;
                 totalCredits += semesterCredits;
                 semesterCount++;
-                
-                System.out.println("📊 Học kỳ " + semester.getName() + 
-                                 ": GPA=" + semesterGpa + 
-                                 ", Tín chỉ=" + semesterCredits +
-                                 ", Weighted=" + (semesterGpa.doubleValue() * semesterCredits));
             }
         }
 
         double overallGpa = totalCredits > 0 ? round(totalWeightedScore / totalCredits) : 0.0;
-
-        System.out.println("🎯 GPA Tổng thể: " + overallGpa + 
-                         " (Total Credits: " + totalCredits + 
-                         ", Semesters: " + semesterCount + ")");
 
         result.put("overallGpa", overallGpa);
         result.put("totalCredits", totalCredits);

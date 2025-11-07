@@ -20,43 +20,6 @@ public class AnalyticsController {
     @Autowired
     private AnalyticsService analyticsService;
 
-    // Lấy điểm trung bình môn học
-    @GetMapping("/subject/{subjectId}/average")
-    public ResponseEntity<?> getSubjectAverage(@PathVariable Long subjectId) {
-        try {
-            Double average = analyticsService.calculateSubjectAverage(subjectId);
-            Map<String, Object> response = Map.of(
-                "subjectId", subjectId,
-                "average", average,
-                "maxScore", 10.0
-            );
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Lỗi tính điểm môn học: " + e.getMessage()));
-        }
-    }
-
-    // Lấy GPA học kỳ
-    @GetMapping("/semester/{semesterId}/gpa")
-    public ResponseEntity<?> getSemesterGPA(@PathVariable Long semesterId) {
-        try {
-            Map<String, Object> gpaData = analyticsService.calculateSemesterGPA(semesterId);
-            return ResponseEntity.ok(gpaData);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Lỗi tính GPA học kỳ: " + e.getMessage()));
-        }
-    }
-
-    // Lấy GPA tổng thể
-    @GetMapping("/user/{userId}/overall-gpa")
-    public ResponseEntity<?> getOverallGPA(@PathVariable Long userId) {
-        try {
-            Map<String, Object> overallGpa = analyticsService.calculateOverallGPA(userId);
-            return ResponseEntity.ok(overallGpa);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Lỗi tính GPA tổng thể: " + e.getMessage()));
-        }
-    }
 
     // Lấy dữ liệu biểu đồ học kỳ
     @GetMapping("/user/{userId}/chart-data")
