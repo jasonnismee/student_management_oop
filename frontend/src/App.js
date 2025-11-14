@@ -12,6 +12,15 @@ function App() {
   const [currentPage, setCurrentPage] = useState('login');
   const [currentUser, setCurrentUser] = useState(null);
 
+
+  useEffect(() => {
+    const url = window.location.pathname;
+    if (url.startsWith('/reset-password')) {
+      setCurrentPage('resetPassword');
+    }
+  }, []);
+
+
   // Khi reload: kiểm tra token
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -25,18 +34,11 @@ function App() {
       }
     }
   }, []);
-
-  // const handleLoginSuccess = (data) => {
-  //   setCurrentUser(data);
-  //   localStorage.setItem('token', data.token);
-  //   localStorage.setItem('userData', JSON.stringify(data));
-  //   setCurrentPage('home');
-  // };
-
+  
 
 
   const handleLoginSuccess = (data) => {
-    console.log('Data nhận từ Login:', data); // ← GIỮ LẠI CONSOLE NÀY
+    console.log('Data nhận từ Login:', data); 
     setCurrentUser(data);
     localStorage.setItem('token', data.token);
     localStorage.setItem('userData', JSON.stringify(data));

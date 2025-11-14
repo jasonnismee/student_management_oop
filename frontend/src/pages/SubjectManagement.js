@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { subjectAPI, semesterAPI } from '../services/api';
+// SỬA 1: Import thêm gradeAPI
+import { subjectAPI, semesterAPI, gradeAPI } from '../services/api';
 
 
 // Thêm component hiển thị điểm chữ
@@ -7,28 +8,39 @@ const DiemChuDisplay = ({ subjectId }) => {
   const [grade, setGrade] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (subjectId) {
-      fetchGradeBySubject();
-    }
-  }, [subjectId]);
-
-  const fetchGradeBySubject = async () => {
+  // SỬA 2: Dùng useCallback để fetchGradeBySubject
+  const fetchGradeBySubject = useCallback(async () => {
+    if (!subjectId) return;
+    
+    setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/grades/subject/${subjectId}`);
-      if (response.ok) {
-        const grades = await response.json();
-        // Lấy grade đầu tiên
-        if (grades.length > 0) {
-          setGrade(grades[0]);
-        }
+      // Dùng gradeAPI.getGradesBySubject thay vì fetch()
+      // Nó sẽ tự động đính kèm token (từ api.js)
+      const response = await gradeAPI.getGradesBySubject(subjectId);
+      
+      // Axios trả về dữ liệu trong response.data
+      const grades = response.data; 
+      
+      if (grades.length > 0) {
+        setGrade(grades[0]);
+      } else {
+        setGrade(null); // Reset nếu không có điểm
       }
     } catch (error) {
       console.error('Lỗi lấy điểm:', error);
+      // Có thể lỗi 403 nếu token hết hạn thật, nhưng nó sẽ không lỗi nếu token còn hạn
+      if (error.response?.status === 403) {
+        console.error("Token có thể đã hết hạn. Vui lòng đăng nhập lại.");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [subjectId]); // Phụ thuộc vào subjectId
+
+  useEffect(() => {
+    fetchGradeBySubject();
+  }, [fetchGradeBySubject]); // Gọi khi hàm fetch thay đổi (chỉ 1 lần khi subjectId thay đổi)
+
 
   if (loading) {
     return (
@@ -84,6 +96,10 @@ const DiemChuDisplay = ({ subjectId }) => {
   );
 };
 
+// ===============================================
+// PHẦN CÒN LẠI CỦA FILE (GIỮ NGUYÊN)
+// ===============================================
+
 const SubjectManagement = ({ currentUser }) => {
   const [semesters, setSemesters] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -111,20 +127,23 @@ const SubjectManagement = ({ currentUser }) => {
     }
   }, [currentUser, loadSemesters]);
 
-  useEffect(() => {
-    if (selectedSemester) {
-      loadSubjects(selectedSemester);
+  // Sửa: Dùng useCallback cho loadSubjects
+  const loadSubjects = useCallback(async (semesterId) => {
+    if (!semesterId) {
+      setSubjects([]); // Xóa danh sách môn học nếu không chọn học kỳ
+      return;
     }
-  }, [selectedSemester]);
-
-  const loadSubjects = async (semesterId) => {
     try {
       const response = await subjectAPI.getSubjectsBySemester(semesterId);
       setSubjects(response.data);
     } catch (error) {
       console.error('Error loading subjects:', error);
     }
-  };
+  }, []); // Không cần phụ thuộc
+
+  useEffect(() => {
+    loadSubjects(selectedSemester);
+  }, [selectedSemester, loadSubjects]);
 
   const handleCreateSubject = async (e) => {
     e.preventDefault();
@@ -185,7 +204,7 @@ const SubjectManagement = ({ currentUser }) => {
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
       <h2>📚 Quản Lý Môn Học</h2>
       
-      {/* Chọn học kỳ - GIỮ NGUYÊN */}
+      {/* Chọn học kỳ */}
       <div style={{ marginBottom: '25px' }}>
         <label style={{ fontWeight: '500', marginRight: '10px', fontSize: '16px' }}>Chọn học kỳ: </label>
         <select 
@@ -211,7 +230,7 @@ const SubjectManagement = ({ currentUser }) => {
         </select>
       </div>
 
-      {/* Button thêm môn học - GIỮ NGUYÊN */}
+      {/* Button thêm môn học */}
       {selectedSemester && (
         <button 
           onClick={() => setShowForm(!showForm)}
@@ -234,7 +253,7 @@ const SubjectManagement = ({ currentUser }) => {
         </button>
       )}
 
-      {/* Form thêm môn học - CĂN GIỮA */}
+      {/* Form thêm môn học */}
       {showForm && selectedSemester && (
         <div style={{ 
           display: 'flex', 
@@ -420,10 +439,10 @@ const SubjectManagement = ({ currentUser }) => {
         </div>
       )}
 
-      {/* Danh sách môn học - GIỮ NGUYÊN */}
+      {/* Danh sách môn học */}
       <div>
         <h3 style={{ marginBottom: '20px' }}>
-          📋 Danh sách môn học {selectedSemester && `(${subjects.length} môn)`}
+          📋 Danh sách môn học {selectedSemester && subjects.length > 0 && `(${subjects.length} môn)`}
         </h3>
         {!selectedSemester ? (
           <div style={{ 
@@ -494,7 +513,7 @@ const SubjectManagement = ({ currentUser }) => {
                   margin: '0 0 10px 0', 
                   color: '#333',
                   fontSize: '1.3em',
-                  paddingRight: '80px'
+                  paddingRight: '80px' // Đảm bảo không đè lên tag tín chỉ
                 }}>
                   {subject.name}
                 </h4>
@@ -528,18 +547,9 @@ const SubjectManagement = ({ currentUser }) => {
                   alignItems: 'center',
                   marginTop: '20px'
                 }}>
-                  {/* <div style={{ 
-                    color: '#28a745',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}>
-                    <span>📚</span>
-                    <span>Môn học</span>
-                  </div> */}
+                  {/* Component DiemChuDisplay sẽ tự động tải điểm */}
                   <DiemChuDisplay subjectId={subject.id} />
+                  
                   <button 
                     onClick={() => handleDeleteSubject(subject.id)}
                     style={{ 

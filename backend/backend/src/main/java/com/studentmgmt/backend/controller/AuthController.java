@@ -18,6 +18,7 @@ import com.studentmgmt.backend.model.PasswordResetToken;
 import com.studentmgmt.backend.model.User; // ✅ thêm model reset token
 import com.studentmgmt.backend.repository.PasswordResetTokenRepository;
 import com.studentmgmt.backend.repository.UserRepository; // ✅ thêm repository reset token
+import com.studentmgmt.backend.security.JwtTokenUtil;
 import com.studentmgmt.backend.service.PasswordResetTokenService; // ✅ thêm service gửi mail reset
 
 @RestController
@@ -33,6 +34,9 @@ public class AuthController {
 
     @Autowired
     private PasswordResetTokenService passwordResetTokenService; // ✅ thêm
+
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -66,13 +70,15 @@ public class AuthController {
             return ResponseEntity.badRequest().body(response);
         }
 
+        String token = jwtTokenUtil.generateToken(user.getStudentId());
+
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Login successful");
         response.put("userId", user.getId());
         response.put("studentId", user.getStudentId());
         response.put("fullName", user.getFullName());
         response.put("email", user.getEmail()); 
-        
+        response.put("token", token);
         return ResponseEntity.ok(response);
     }
 

@@ -5,7 +5,7 @@ const Register = ({ onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
     studentId: '',
     fullName: '',
-    email: '',       // ✅ thêm email
+    email: '',      
     password: '',
   });
 
