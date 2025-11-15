@@ -1,6 +1,7 @@
-import axios from 'axios';
+// SỬA 1: Import 'api' đã được cấu hình (với interceptor) thay vì 'axios'
+import api from './api'; 
 
-const API_BASE_URL = 'http://localhost:8080'; // Backend Spring Boot
+// SỬA 2: Không cần API_BASE_URL nữa, vì 'api' đã có sẵn baseURL.
 
 // 🔥 Lấy thông tin sinh viên đang đăng nhập từ localStorage
 const getCurrentStudent = () => {
@@ -22,14 +23,16 @@ export const getAIResponse = async (userMessage) => {
     const student = getCurrentStudent();
     console.log('👤 Current student:', student);
 
-    const response = await axios.post(
-      `${API_BASE_URL}/api/ai-chat/send`,
+    // SỬA 3: Dùng 'api.post' và đường dẫn tương đối (vì api.js đã có .../api)
+    const response = await api.post(
+      '/ai-chat/send', // Đường dẫn tương đối
       {
         message: userMessage,
         studentId: student?.userId || null, // ID thật
         studentCode: student?.studentId || null, // Mã SV thật
       },
       {
+        // Headers và timeout vẫn giữ nguyên
         headers: {
           'Content-Type': 'application/json',
         },
@@ -42,6 +45,11 @@ export const getAIResponse = async (userMessage) => {
   } catch (error) {
     console.error('❌ Frontend: Backend connection failed:', error);
 
+    // Lỗi 403 (nếu có) sẽ bị bắt ở đây
+    if (error.response?.status === 403) {
+      return `🤖 **LỖI BẢO MẬT (403)**\n\nKhông thể xác thực. Token của bạn có thể đã hết hạn. Vui lòng đăng xuất và đăng nhập lại.`;
+    }
+
     return `🤖 **CHẾ ĐỘ OFFLINE**\n\nTôi hiểu bạn đang hỏi: "${userMessage}"\n\nLỗi kết nối backend: ${error.message}\n\nVui lòng kiểm tra:\n• Backend Spring Boot đã chạy chưa?\n• Port 8080 có đang hoạt động?`;
   }
 };
@@ -50,13 +58,14 @@ export const getAIResponse = async (userMessage) => {
 export const testBackendConnection = async () => {
   try {
     console.log('🧪 Testing backend connection...');
-    const response = await axios.get(`${API_BASE_URL}/api/ai-chat/test`, {
+    // SỬA 4: Dùng 'api.get' và đường dẫn tương đối
+    const response = await api.get('/ai-chat/test', {
       timeout: 5000,
     });
     console.log('✅ Backend test successful:', response.data);
     return { success: true, data: response.data };
   } catch (error) {
-    console.error('❌ Backend test failed:', error.message);
+    console.error('❌ Backend test failed:', error); // Log cả object error
     return { success: false, error: error.message };
   }
 };
