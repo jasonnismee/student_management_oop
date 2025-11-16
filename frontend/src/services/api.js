@@ -12,13 +12,13 @@ const api = axios.create({
 });
 
 // ✅ Tự động gắn token (nếu có) vào mọi request
-api.interceptors.request.use(  // <-- ĐÃ SỬA TỪ 'axios' THÀNH 'api'
+api.interceptors.request.use(
   config => {
-    const token = localStorage.getItem('token'); 
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-    return config; 
+    return config;
   },
   error => {
     return Promise.reject(error);
@@ -86,6 +86,36 @@ export const documentAPI = {
     api.post('/documents/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+
+  // ✅✅✅ HÀM MỚI ĐỂ DOWNLOAD (SỬA LỖI 403) ✅✅✅
+  downloadDocument: async (documentId, userId, fileName) => {
+    try {
+      const response = await api.get(`/documents/${documentId}/download?userId=${userId}`, {
+        responseType: 'blob', // Quan trọng: Để Axios hiểu đây là file tải về
+      });
+
+      // Tạo một đường dẫn URL ảo cho Blob (file) vừa tải về
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      
+      // Tạo thẻ <a> ảo để kích hoạt tải xuống
+      const link = document.createElement('a');
+      link.href = url;
+      // Đặt tên file khi tải về (nếu không có fileName thì dùng tên mặc định)
+      link.setAttribute('download', fileName || `document-${documentId}`);
+      
+      // Thêm vào body, click, rồi xóa đi
+      document.body.appendChild(link);
+      link.click();
+      
+      // Dọn dẹp
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Ném lỗi ra để component bên ngoài có thể hiển thị thông báo nếu cần
+      throw error;
+    }
+  },
 
   toggleBookmark: (documentId, userId) =>
     api.put(`/documents/${documentId}/bookmark?userId=${userId}`),

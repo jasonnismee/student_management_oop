@@ -216,9 +216,6 @@ const handleToggleBookmark = async (documentId) => {
     }
   };
   
-  const handleDownload = (documentId) => {
-    window.open(`${documentAPI.baseURL}/${documentId}/download?userId=${currentUser.userId}`, '_blank');
-  };
 
   // Reset tất cả filters
   const handleResetFilters = () => {
