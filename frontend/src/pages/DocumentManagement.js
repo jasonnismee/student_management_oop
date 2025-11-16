@@ -163,7 +163,50 @@ const DocumentManagement = ({ currentUser }) => {
     }
   };
 
+  // DÁN HÀM NÀY VÀO LẠI (nếu nó bị mất)
+  const handleDownload = async (documentId, fileName) => {
+    try {
+      console.log("Đang download:", fileName);
+      
+      // 1. Gọi API bằng axios (đã có trong documentAPI)
+      const response = await documentAPI.downloadDocument(documentId, currentUser.userId);
+  
+      // 2. Tạo một Blob từ dữ liệu file
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+  
+      // 3. Tạo một URL tạm thời trong trình duyệt
+      const downloadUrl = window.URL.createObjectURL(blob);
+  
+      // 4. Tạo một thẻ <a> "ảo"
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', fileName);
+  
+      // 5. Thêm thẻ vào trang, "click" nó, rồi gỡ đi
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+  
+      // 6. Xóa URL tạm thời
+      window.URL.revokeObjectURL(downloadUrl);
+  
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Lỗi: Không thể tải file. Bạn có thể đã mất quyền truy cập hoặc file không còn.');
+    }
+  };
+
   const handleDelete = async (documentId) => {
+    // Tìm tài liệu trong kho gốc để kiểm tra
+    const docToDelete = allDocuments.find(doc => doc.id === documentId);
+    
+    // Nếu tìm thấy và nó đã được bookmark
+    if (docToDelete && docToDelete.bookmarked) {
+        alert('Tài liệu này đã được đánh dấu! Vui lòng bỏ đánh dấu trước khi xóa.');
+        return; // Dừng hàm, không làm gì cả
+    }
+
+
     if (window.confirm('Bạn có chắc muốn xóa tài liệu này? Hành động này không thể hoàn tác.')) {
       try {
         await documentAPI.deleteDocument(documentId, currentUser.userId);

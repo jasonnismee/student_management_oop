@@ -63,6 +63,20 @@ public class SubjectRepository {
         return count != null && count > 0;
     }
 
+    // ✅ THÊM METHOD NÀY: Kiểm tra mã môn học trùng lặp (không phân biệt hoa/thường)
+    public boolean existsBySubjectCode(String subjectCode) {
+        // Bỏ qua nếu subjectCode rỗng hoặc null (vì đây là trường tùy chọn)
+
+        if (subjectCode == null || subjectCode.trim().isEmpty()) {
+            return false;
+        }
+        
+        // Dùng LOWER() để "INT1001" và "int1001" được coi là trùng nhau
+        String sql = "SELECT COUNT(*) FROM subjects WHERE LOWER(subject_code) = LOWER(?)";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, subjectCode.trim());
+        return count != null && count > 0;
+    }
+
     // ✅ Lưu môn học mới
     public Subject save(Subject subject) {
         String sql = "INSERT INTO subjects (name, credits, subject_code, semester_id, created_at) VALUES (?, ?, ?, ?, ?)";

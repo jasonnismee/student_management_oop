@@ -83,6 +83,14 @@ public class SemesterRepository {
         return count != null && count > 0;
     }
 
+    // ✅ THÊM HÀM NÀY: Kiểm tra tên học kỳ trùng lặp (không phân biệt hoa/thường)
+    public boolean existsByNameAndUserId(String name, Long userId) {
+        // Chúng ta dùng LOWER() để "HK1" và "hk1" được coi là trùng nhau
+        String sql = "SELECT COUNT(*) FROM semesters WHERE user_id = ? AND LOWER(name) = LOWER(?)";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId, name);
+        return count != null && count > 0;
+    }
+
     // ✅ Xóa học kỳ theo id
     public void deleteById(Long id) {
         String sql = "DELETE FROM semesters WHERE id = ?";

@@ -59,6 +59,11 @@ public class SubjectController {
             if (semester == null) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Semester không tồn tại"));
             }
+            //Check trùng mã môn
+            if (subjectRepository.existsBySubjectCode(subjectCode)) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Mã môn học này đã tồn tại. Vui lòng chọn mã khác."));
+            }
 
             // Tạo object Subject
             Subject subject = new Subject();

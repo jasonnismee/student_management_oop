@@ -93,7 +93,15 @@ public class SemesterController {
             // Tạo semester object
             Semester semester = new Semester();
             semester.setUserId(userId);
-            semester.setName(((String) request.get("name")).trim());
+            //semester.setName(((String) request.get("name")).trim());
+            String semesterName = ((String) request.get("name")).trim(); // <-- Lấy tên ra biến
+            semester.setName(semesterName);                             // <-- Gán tên vào object
+            if (semesterRepository.existsByNameAndUserId(semesterName, userId)) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Tên học kỳ này đã tồn tại. Vui lòng chọn tên khác."));
+            }
+
+
             
             // Xử lý ngày bắt đầu và kết thúc
             if (request.get("startDate") != null) {
@@ -108,6 +116,10 @@ public class SemesterController {
                 if (semester.getEndDate().isBefore(semester.getStartDate())) {
                     return ResponseEntity.badRequest()
                         .body(Map.of("message", "Ngày kết thúc không thể trước ngày bắt đầu"));
+                }
+                else if (semester.getEndDate().isEqual(semester.getStartDate())) {
+                    return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Ngày kết thúc không thể trùng ngày bắt đầu"));
                 }
             }
 
