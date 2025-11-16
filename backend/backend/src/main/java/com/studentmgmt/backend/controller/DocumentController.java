@@ -1,19 +1,36 @@
 package com.studentmgmt.backend.controller;
 
-import com.studentmgmt.backend.model.Document;
-import com.studentmgmt.backend.repository.DocumentRepository;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.*;
-import java.util.*;
+import com.studentmgmt.backend.model.Document;
+import com.studentmgmt.backend.repository.DocumentRepository;
 
 @RestController
 @RequestMapping("/api/documents")
@@ -62,6 +79,40 @@ public class DocumentController {
     @GetMapping("/user/{userId}/search")
     public List<Document> searchDocuments(@PathVariable Long userId, @RequestParam String keyword) {
         return documentRepository.findByUserIdAndFileNameContainingIgnoreCase(userId, keyword);
+    }
+
+    @GetMapping("/{id}/download")
+    public ResponseEntity<Resource> downloadDocument(@PathVariable Long id, @RequestParam(required = false) Long userId) {
+        try {
+            // 1. Tìm thông tin file trong Database
+            Document doc = documentRepository.findById(id).orElse(null);
+            if (doc == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // 2. Lấy đường dẫn file từ DB (file_path)
+            // Lưu ý: doc.getFilePath() phải trả về đường dẫn tuyệt đối trên ổ cứng server
+            Path filePath = Paths.get(doc.getFilePath());
+            Resource resource = new UrlResource(filePath.toUri());
+
+            // 3. Kiểm tra file vật lý có tồn tại và đọc được không
+            if (resource.exists() && resource.isReadable()) {
+                // Trả về file cho trình duyệt tải xuống
+                return ResponseEntity.ok()
+                        // Xác định loại file (PDF, Image, v.v.)
+                        .contentType(MediaType.parseMediaType(doc.getFileType())) 
+                        // Đặt tên file khi tải về
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getFileName() + "\"")
+                        .body(resource);
+            } else {
+                // File có trong DB nhưng không thấy trên ổ cứng
+                return ResponseEntity.notFound().build();
+            }
+        } catch (MalformedURLException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @PutMapping("/{documentId}/bookmark")
