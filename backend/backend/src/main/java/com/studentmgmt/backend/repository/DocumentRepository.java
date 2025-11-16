@@ -35,6 +35,7 @@ public class DocumentRepository {
     };
 
     public List<Document> findByUserId(Long userId) {
+        System.out.println("--- REPOSITORY: Đang chạy SQL: SELECT * FROM documents WHERE user_id = " + userId); // <-- THÊM DÒNG NÀY
         return jdbcTemplate.query("SELECT * FROM documents WHERE user_id = ?", documentMapper, userId);
     }
 

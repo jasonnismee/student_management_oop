@@ -216,9 +216,42 @@ const handleToggleBookmark = async (documentId) => {
     }
   };
   
-  const handleDownload = (documentId) => {
-    window.open(`${documentAPI.baseURL}/${documentId}/download?userId=${currentUser.userId}`, '_blank');
+  // const handleDownload = (documentId) => {
+  //   window.open(`${documentAPI.baseURL}/${documentId}/download?userId=${currentUser.userId}`, '_blank');
+  // };
+const handleDownload = async (documentId, fileName) => {
+    try {
+      console.log("Đang download:", fileName);
+      
+      // 1. Gọi API bằng axios (đã có trong documentAPI)
+      //    Nó sẽ tự động đính kèm Token
+      const response = await documentAPI.downloadDocument(documentId, currentUser.userId);
+  
+      // 2. Tạo một Blob từ dữ liệu file
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+  
+      // 3. Tạo một URL tạm thời trong trình duyệt
+      const downloadUrl = window.URL.createObjectURL(blob);
+  
+      // 4. Tạo một thẻ <a> "ảo"
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', fileName); // <-- Dùng tên file đã truyền vào
+  
+      // 5. Thêm thẻ vào trang, "click" nó, rồi gỡ đi
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+  
+      // 6. Xóa URL tạm thời
+      window.URL.revokeObjectURL(downloadUrl);
+  
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Lỗi: Không thể tải file. Bạn có thể đã mất quyền truy cập hoặc file không còn.');
+    }
   };
+
 
   // Reset tất cả filters
   const handleResetFilters = () => {

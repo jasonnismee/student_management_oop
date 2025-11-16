@@ -47,7 +47,7 @@ const DocumentItem = ({ doc, onToggleBookmark, onDelete, onDownload }) => {
                     {doc.bookmarked ? <FaBookmark size={20} /> : <FaRegBookmark size={20} />}
                 </button>
                 <button 
-                    onClick={() => onDownload(doc.id)}
+                    onClick={() => onDownload(doc.id, doc.fileName)}
                     style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer' }}
                     title="Tải xuống"
                 >

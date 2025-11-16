@@ -86,7 +86,10 @@ export const documentAPI = {
     api.post('/documents/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
-
+    downloadDocument: (documentId, userId) =>
+    api.get(`/documents/${documentId}/download?userId=${userId}`, {
+      responseType: 'blob', // Yêu cầu server trả về file (blob)
+    }),
   toggleBookmark: (documentId, userId) =>
     api.put(`/documents/${documentId}/bookmark?userId=${userId}`),
 

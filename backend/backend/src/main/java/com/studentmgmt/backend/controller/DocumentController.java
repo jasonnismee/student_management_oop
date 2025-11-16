@@ -45,6 +45,7 @@ public class DocumentController {
 
     @GetMapping("/user/{userId}")
     public List<Document> getDocumentsByUser(@PathVariable Long userId) {
+        System.out.println("--- CONTROLLER: Đang gọi getDocumentsByUser cho userId: " + userId); // <-- THÊM DÒNG NÀY
         return documentRepository.findByUserId(userId);
     }
 
@@ -151,12 +152,15 @@ public class DocumentController {
 
     @GetMapping("/{documentId}/download")
     public ResponseEntity<?> downloadDocument(@PathVariable Long documentId, @RequestParam Long userId) {
+        System.out.println("--- CONTROLLER: Đang gọi downloadDocument cho docId: " + documentId + ", userId: " + userId); // <-- THÊM DÒNG NÀY;
         Optional<Document> docOpt = documentRepository.findById(documentId);
+
         if (docOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
         Document document = docOpt.get();
+        System.out.println("--- CONTROLLER: File 4 này THỰC SỰ thuộc về userId: " + document.getUserId()); // <-- THÊM DÒNG NÀY
         if (!document.getUserId().equals(userId)) {
             return ResponseEntity.status(403).body(Map.of("message", "Access denied"));
         }
