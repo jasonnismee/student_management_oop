@@ -33,7 +33,7 @@ public class SecurityConfig implements WebMvcConfigurer {
             .cors(cors -> {})
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                //.requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
                 //.requestMatchers("/api/ai-chat/**").permitAll()
                 .anyRequest().authenticated() 
             );

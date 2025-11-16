@@ -48,6 +48,12 @@ public class AuthController {
             return ResponseEntity.badRequest().body(response);
         }
 
+        if (userRepository.existsByEmail(user.getEmail())) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Email already exists"); // <-- Thông báo mới
+            return ResponseEntity.badRequest().body(response); // <-- Trả về lỗi 400
+        }
+
         // Mã hóa password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         Long newUserId = userRepository.save(user);
@@ -60,16 +66,33 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/login")
+ @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        // 1. CSDL vẫn tìm (không phân biệt hoa/thường)
         User user = userRepository.findByStudentId(loginRequest.getStudentId());
         
-        if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Invalid student ID or password");
-            return ResponseEntity.badRequest().body(response);
+        // 2. TẠO MAP LỖI CHUNG
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("message", "Invalid student ID or password");
+
+        // 3. TÁCH IF: Kiểm tra user == null
+        if (user == null) {
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+        
+        // 4. ✅✅✅ ĐÂY LÀ PHẦN THÊM VÀO ĐỂ TEST HOA/THƯỜNG ✅✅✅
+        // Hàm .equals() của Java CÓ phân biệt hoa/thường
+        if (!user.getStudentId().equals(loginRequest.getStudentId())) {
+            // Nếu chuỗi gõ là 'b23...' và chuỗi DB là 'B23...' -> Lỗi
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+        
+        // 5. TÁCH IF: Kiểm tra mật khẩu
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
+        // 6. Nếu tất cả đều đúng -> Tạo token
         String token = jwtTokenUtil.generateToken(user.getStudentId());
 
         Map<String, Object> response = new HashMap<>();

@@ -30,6 +30,17 @@ public class UserRepository {
         return count != null && count > 0;
     }
 
+    // ✅ SỬA: THÊM HÀM KIỂM TRA EMAIL TỒN TẠI
+    public boolean existsByEmail(String email) {
+        // Bỏ qua email rỗng hoặc null (nếu bạn cho phép)
+        if (email == null || email.isBlank()) {
+            return false;
+        }
+        String sql = "SELECT COUNT(*) FROM users WHERE email = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, email);
+        return count != null && count > 0;
+    }
+
     // ✅ Kiểm tra user có tồn tại bằng id không (tùy chọn)
     public boolean existsById(Long id) {
         String sql = "SELECT COUNT(*) FROM users WHERE id = ?";
