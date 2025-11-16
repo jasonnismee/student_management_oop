@@ -28,9 +28,13 @@ public class DocumentController {
     private static final List<String> ALLOWED_MIME_TYPES = Arrays.asList(
             "application/pdf",
             "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "image/png",
+            "image/jpg",
+            "image/jpeg"
+            );
 
-    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("pdf", "doc", "docx");
+    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("pdf", "doc", "docx", "png", "jpg", "jpeg");
 
     public DocumentController() throws IOException {
         this.fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();

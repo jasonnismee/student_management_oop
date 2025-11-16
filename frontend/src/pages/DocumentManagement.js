@@ -21,19 +21,20 @@ const DocumentManagement = ({ currentUser }) => {
   const supportedFormats = [
     { value: '', label: 'Tất cả định dạng' },
     { value: 'pdf', label: 'PDF' },
-    { value: 'doc', label: 'DOC' },
+    //{ value: 'doc', label: 'DOC' },
     { value: 'docx', label: 'DOCX' },
-    { value: 'txt', label: 'TXT' },
-    { value: 'ppt', label: 'PPT' },
-    { value: 'pptx', label: 'PPTX' },
-    { value: 'xls', label: 'XLS' },
-    { value: 'xlsx', label: 'XLSX' },
+    //{ value: 'txt', label: 'TXT' },
+    //{ value: 'ppt', label: 'PPT' },
+    //{ value: 'pptx', label: 'PPTX' },
+    //{ value: 'xls', label: 'XLS' },
+   // { value: 'xlsx', label: 'XLSX' },
     { value: 'jpg', label: 'JPG' },
     { value: 'png', label: 'PNG' },
-    { value: 'zip', label: 'ZIP' },
-    { value: 'rar', label: 'RAR' }
+   // { value: 'zip', label: 'ZIP' },
+    //{ value: 'rar', label: 'RAR' }
   ];
 
+// Hàm gọi API lấy danh sách môn học
   const loadSubjects = useCallback(async () => {
     try {
       const response = await subjectAPI.getSubjectsByUser(currentUser.userId);
@@ -43,12 +44,14 @@ const DocumentManagement = ({ currentUser }) => {
     }
   }, [currentUser.userId]);
 
+  // Hàm gọi API lấy danh sách tài liệu
   const loadAllDocuments = useCallback(async () => {
     try {
       setLoading(true);
       const response = await documentAPI.getDocumentsByUser(currentUser.userId);
+      console.log('LOAD DỮ LIỆU GỐC (allDocuments):', response.data);
       setAllDocuments(response.data);
-      setDocuments(response.data); // Ban đầu hiển thị tất cả
+      //setDocuments(response.data); // Ban đầu hiển thị tất cả
     } catch (error) {
       console.error('Error loading documents:', error);
       setAllDocuments([]);
@@ -59,12 +62,15 @@ const DocumentManagement = ({ currentUser }) => {
   }, [currentUser.userId]);
 
   // Filter documents dựa trên các điều kiện
-  const filterDocuments = useCallback(() => {
+ const filterDocuments = () => {
     let filtered = [...allDocuments];
+
+    console.log('--- BỘ LỌC ĐANG CHẠY ---');
+    console.log('Đang lọc với trạng thái bookmarked là:', isBookmarkedFilter);
 
     // Filter theo bookmark
     if (isBookmarkedFilter) {
-      filtered = filtered.filter(doc => doc.isBookmarked);
+      filtered = filtered.filter(doc => doc.bookmarked); // Phải là doc.bookmarked nhé!
     }
 
     // Filter theo môn học
@@ -91,8 +97,9 @@ const DocumentManagement = ({ currentUser }) => {
     }
 
     setDocuments(filtered);
-  }, [allDocuments, isBookmarkedFilter, selectedSubject, selectedFormat, searchTerm]);
+  };
 
+  // useEffect kích hoạt 2 hàm trên khi component được mount
   useEffect(() => {
     if (currentUser?.userId) {
       loadSubjects();
@@ -101,9 +108,11 @@ const DocumentManagement = ({ currentUser }) => {
   }, [currentUser, loadSubjects, loadAllDocuments]);
 
   // Áp dụng filter khi có thay đổi
+// Áp dụng filter khi có thay đổi
   useEffect(() => {
+    console.log('USE EFFECT (MỚI) ĐANG CHẠY');
     filterDocuments();
-  }, [filterDocuments]);
+  }, [allDocuments, isBookmarkedFilter, selectedSubject, selectedFormat, searchTerm]);
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -166,10 +175,42 @@ const DocumentManagement = ({ currentUser }) => {
     }
   };
 
-  const handleToggleBookmark = async (documentId) => {
+ /* const handleToggleBookmark = async (documentId) => {
     try {
       await documentAPI.toggleBookmark(documentId, currentUser.userId);
       await loadAllDocuments(); // Reload để cập nhật trạng thái bookmark
+    } catch (error) {
+      alert('Lỗi khi đánh dấu tài liệu: ' + error.response?.data?.message);
+    }
+  };*/
+
+const handleToggleBookmark = async (documentId) => {
+    try {
+      // 1. Gọi API và chờ kết quả trả về
+      // (Backend sẽ trả về trạng thái bookmark MỚI, ví dụ: { "bookmarked": true })
+      const response = await documentAPI.toggleBookmark(documentId, currentUser.userId);
+      
+      // 2. Lấy trạng thái bookmark mới từ kết quả
+      const newBookmarkedStatus = response.data.bookmarked;
+
+      // 3. Cập nhật "kho gốc" (allDocuments) ngay tại frontend
+      //    Chúng ta không cần gọi lại loadAllDocuments()
+      setAllDocuments(prevMasterList => {
+        // Dùng .map() để tạo ra một mảng MỚI
+        return prevMasterList.map(doc => {
+          // Nếu tìm thấy đúng tài liệu vừa bấm
+          if (doc.id === documentId) {
+            // Trả về một object copy, nhưng thay đổi giá trị 'bookmarked'
+            return { ...doc, bookmarked: newBookmarkedStatus };
+          }
+          // Nếu không phải, trả về y nguyên
+          return doc;
+        });
+      });
+      
+      // 4. Vì allDocuments thay đổi, useEffect sẽ tự động chạy
+      //    hàm filterDocuments() và cập nhật lại giao diện.
+
     } catch (error) {
       alert('Lỗi khi đánh dấu tài liệu: ' + error.response?.data?.message);
     }
@@ -271,7 +312,10 @@ const DocumentManagement = ({ currentUser }) => {
 
           {/* Filter đánh dấu */}
           <button
-            onClick={() => setIsBookmarkedFilter(!isBookmarkedFilter)}
+            onClick={() => {
+              console.log('NÚT FILTER ĐƯỢC BẤM. Trạng thái MỚI SẼ LÀ:', !isBookmarkedFilter);
+              setIsBookmarkedFilter(!isBookmarkedFilter)
+            }}
             style={{ 
               padding: '10px 16px', 
               backgroundColor: isBookmarkedFilter ? '#ffc107' : '#f8f9fa', 
