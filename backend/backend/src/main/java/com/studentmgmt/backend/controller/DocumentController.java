@@ -188,6 +188,13 @@ public class DocumentController {
             return ResponseEntity.badRequest().body(Map.of("message", "Access denied"));
         }
 
+        //ktra document da danh dau
+        if (Boolean.TRUE.equals(document.getBookmarked())) {
+            // Dùng ResponseEntity.status(403) (Forbidden) thì chuẩn hơn
+            return ResponseEntity.status(403) 
+                .body(Map.of("message", "Không thể xóa tài liệu đã được đánh dấu. Vui lòng bỏ đánh dấu trước."));
+        }
+
         try {
             Path filePath = Paths.get(document.getFilePath());
             if (Files.exists(filePath)) {
