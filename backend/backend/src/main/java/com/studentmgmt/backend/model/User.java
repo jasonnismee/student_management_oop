@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 public class User {
     private Long id;
     private String studentId;
-    private String email;       // ✅ thêm trường này
+    private String email;       
     private String password;
     private String fullName;
     private LocalDateTime createdAt;

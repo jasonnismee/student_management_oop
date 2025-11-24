@@ -83,18 +83,18 @@ public class DocumentController {
     @GetMapping("/{id}/download")
     public ResponseEntity<Resource> downloadDocument(@PathVariable Long id, @RequestParam(required = false) Long userId) {
         try {
-            // 1. Tìm thông tin file trong Database
+            // Tìm thông tin file trong Database
             Document doc = documentRepository.findById(id).orElse(null);
             if (doc == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            // 2. Lấy đường dẫn file từ DB (file_path)
-            // Lưu ý: doc.getFilePath() phải trả về đường dẫn tuyệt đối trên ổ cứng server
+            // Lấy đường dẫn file từ DB (file_path)
+            // doc.getFilePath() trả về đường dẫn tuyệt đối trên ổ cứng server
             Path filePath = Paths.get(doc.getFilePath());
             Resource resource = new UrlResource(filePath.toUri());
 
-            // 3. Kiểm tra file vật lý có tồn tại và đọc được không
+            // Kiểm tra file vật lý có tồn tại và đọc được không
             if (resource.exists() && resource.isReadable()) {
                 // Trả về file cho trình duyệt tải xuống
                 return ResponseEntity.ok()
@@ -113,6 +113,7 @@ public class DocumentController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
 
     @PutMapping("/{documentId}/bookmark")
     public ResponseEntity<?> toggleBookmark(@PathVariable Long documentId, @RequestParam Long userId) {
@@ -190,7 +191,6 @@ public class DocumentController {
 
         //ktra document da danh dau
         if (Boolean.TRUE.equals(document.getBookmarked())) {
-            // Dùng ResponseEntity.status(403) (Forbidden) thì chuẩn hơn
             return ResponseEntity.status(403) 
                 .body(Map.of("message", "Không thể xóa tài liệu đã được đánh dấu. Vui lòng bỏ đánh dấu trước."));
         }

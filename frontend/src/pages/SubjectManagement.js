@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// SỬA 1: Import thêm gradeAPI
 import { subjectAPI, semesterAPI, gradeAPI } from '../services/api';
 
 
@@ -8,14 +7,12 @@ const DiemChuDisplay = ({ subjectId }) => {
   const [grade, setGrade] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // SỬA 2: Dùng useCallback để fetchGradeBySubject
   const fetchGradeBySubject = useCallback(async () => {
     if (!subjectId) return;
     
     setLoading(true);
     try {
-      // Dùng gradeAPI.getGradesBySubject thay vì fetch()
-      // Nó sẽ tự động đính kèm token (từ api.js)
+
       const response = await gradeAPI.getGradesBySubject(subjectId);
       
       // Axios trả về dữ liệu trong response.data
@@ -28,7 +25,7 @@ const DiemChuDisplay = ({ subjectId }) => {
       }
     } catch (error) {
       console.error('Lỗi lấy điểm:', error);
-      // Có thể lỗi 403 nếu token hết hạn thật, nhưng nó sẽ không lỗi nếu token còn hạn
+      
       if (error.response?.status === 403) {
         console.error("Token có thể đã hết hạn. Vui lòng đăng nhập lại.");
       }
@@ -39,7 +36,7 @@ const DiemChuDisplay = ({ subjectId }) => {
 
   useEffect(() => {
     fetchGradeBySubject();
-  }, [fetchGradeBySubject]); // Gọi khi hàm fetch thay đổi (chỉ 1 lần khi subjectId thay đổi)
+  }, [fetchGradeBySubject]);
 
 
   if (loading) {
@@ -145,6 +142,7 @@ const SubjectManagement = ({ currentUser }) => {
     loadSubjects(selectedSemester);
   }, [selectedSemester, loadSubjects]);
 
+  //tạo môn học
   const handleCreateSubject = async (e) => {
     e.preventDefault();
     
@@ -187,7 +185,7 @@ const SubjectManagement = ({ currentUser }) => {
       alert('Lỗi khi tạo môn học: ' + (error.response?.data?.message || error.message));
     }
   };
-
+// xóa môn học
   const handleDeleteSubject = async (id) => {
     if (window.confirm('Bạn có chắc muốn xóa môn học này?')) {
       try {

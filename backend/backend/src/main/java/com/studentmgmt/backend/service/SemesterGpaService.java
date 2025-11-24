@@ -103,7 +103,7 @@ public class SemesterGpaService {
         }
     }
 
-    // 🚀 TỰ ĐỘNG CHẠY KHI STARTUP - CẬP NHẬT GPA TẤT CẢ HỌC KỲ
+    //  CẬP NHẬT GPA TẤT CẢ HỌC KỲ
     // ==============================
     @EventListener(ApplicationReadyEvent.class)
     public void autoUpdateAllSemestersGpaOnStartup() {
@@ -131,7 +131,7 @@ public class SemesterGpaService {
         }
     }
 
-    // 🆕 METHOD: Lấy tất cả học kỳ
+    //Lấy tất cả học kỳ
     private List<Semester> getAllSemesters() {
         try {
             // Lấy tất cả user_id có học kỳ

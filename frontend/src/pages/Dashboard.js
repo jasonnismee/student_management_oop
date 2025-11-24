@@ -44,7 +44,6 @@ const Dashboard = ({ currentUser }) => {
     }
   }, [currentUser, loadSemesters]);
 
-  // 🎯 AUTO-REFRESH - ĐÃ SỬA: Đặt sau khi loadSemesters đã được định nghĩa
   useEffect(() => {
     const interval = setInterval(loadSemesters, 3000);
     return () => clearInterval(interval);
@@ -82,13 +81,13 @@ const Dashboard = ({ currentUser }) => {
     }
   };
 
-  // 🆕 Hàm để refresh analytics khi có thay đổi điểm
+
   const handleGradeChange = () => {
     console.log('Grade changed - refreshing analytics...');
     setRefreshAnalytics(prev => prev + 1);
   };
 
-  // 🧩 Quản lý học kỳ - GIỮ NGUYÊN NHƯ CŨ
+  // Quản lý học kỳ
   const renderSemesterManagement = () => (
     <div>
       <h2>Quản Lý Học Kỳ</h2>
@@ -279,13 +278,12 @@ const Dashboard = ({ currentUser }) => {
     </div>
   );
 
-  // 🧩 Các phần khác - CHỈ THÊM CALLBACK
   const renderSubjectManagement = () => <SubjectManagement currentUser={currentUser} />;
   
   const renderGradeManagement = () => (
     <GradeManagement 
       currentUser={currentUser} 
-      onGradeChange={handleGradeChange} // 🆕 THÊM DÒNG NÀY
+      onGradeChange={handleGradeChange} 
     />
   );
   
@@ -294,13 +292,12 @@ const Dashboard = ({ currentUser }) => {
   const renderAnalyticsDashboard = () => (
     <AnalyticsDashboard 
       currentUser={currentUser} 
-      refreshTrigger={refreshAnalytics} // 🆕 THÊM DÒNG NÀY
+      refreshTrigger={refreshAnalytics} 
     />
   );
 
   return (
     <div style={{ maxWidth: '1250px', margin: '0 auto', padding: '20px' }}>
-      {/* 🧭 MENU CHÍNH - GIỮ NGUYÊN */}
       <div
         style={{
           display: 'flex',

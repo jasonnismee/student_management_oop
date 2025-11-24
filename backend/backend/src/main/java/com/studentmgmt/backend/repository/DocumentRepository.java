@@ -30,12 +30,27 @@ public class DocumentRepository {
                     rs.getTimestamp("uploaded_at").toLocalDateTime() : null);
             d.setUserId(rs.getLong("user_id"));
             d.setSubjectId(rs.getObject("subject_id") != null ? rs.getLong("subject_id") : null);
+            try {
+                d.setSubjectName(rs.getString("subject_name"));
+            } catch (SQLException e) {
+                // Bỏ qua nếu không có cột này
+            }
             return d;
         }
     };
 
+    // public List<Document> findByUserId(Long userId) {
+    //     return jdbcTemplate.query("SELECT * FROM documents WHERE user_id = ?", documentMapper, userId);
+    // }
+
     public List<Document> findByUserId(Long userId) {
-        return jdbcTemplate.query("SELECT * FROM documents WHERE user_id = ?", documentMapper, userId);
+        String sql = """
+            SELECT d.*, s.name AS subject_name 
+            FROM documents d
+            LEFT JOIN subjects s ON d.subject_id = s.id
+            WHERE d.user_id = ?
+        """;
+        return jdbcTemplate.query(sql, documentMapper, userId);
     }
 
     public List<Document> findBySubjectId(Long subjectId) {

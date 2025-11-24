@@ -31,21 +31,21 @@ public class SubjectController {
     @Autowired
     private SemesterGpaService semesterGpaService;
 
-    // ✅ Lấy danh sách môn học theo học kỳ
+    // Lấy danh sách môn học theo học kỳ
     @GetMapping("/semester/{semesterId}")
     public ResponseEntity<List<Subject>> getSubjectsBySemester(@PathVariable Long semesterId) {
         List<Subject> subjects = subjectRepository.findBySemesterId(semesterId);
         return ResponseEntity.ok(subjects);
     }
 
-    // ✅ Lấy danh sách môn học của user
+    //  Lấy danh sách môn học của user
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Subject>> getSubjectsByUser(@PathVariable Long userId) {
         List<Subject> subjects = subjectRepository.findByUserId(userId);
         return ResponseEntity.ok(subjects);
     }
 
-    // ✅ Thêm môn học mới (dùng SQL thuần, nhận semesterId trực tiếp từ JSON)
+    //  Thêm môn học mới 
     @PostMapping
     public ResponseEntity<?> createSubject(@RequestBody Map<String, Object> body) {
         try {
@@ -89,7 +89,7 @@ public class SubjectController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Không có quyền xóa môn học này"));
             }
 
-            // 🆕 LẤY THÔNG TIN HỌC KỲ TRƯỚC KHI XÓA
+            // LẤY THÔNG TIN HỌC KỲ TRƯỚC KHI XÓA
             Subject subject = subjectRepository.findById(id);
             Long semesterId = null;
             if (subject != null && subject.getSemester() != null) {
@@ -97,7 +97,7 @@ public class SubjectController {
                 System.out.println("🗑️ Chuẩn bị xóa môn học: " + subject.getName() + " thuộc học kỳ: " + semesterId);
             }
 
-            // 🆕 XÓA TẤT CẢ ĐIỂM CỦA MÔN HỌC TRƯỚC
+            // XÓA TẤT CẢ ĐIỂM CỦA MÔN HỌC TRƯỚC
             gradeRepository.deleteBySubjectId(id);
             System.out.println("✅ Đã xóa tất cả điểm của môn học ID: " + id);
 
@@ -105,7 +105,7 @@ public class SubjectController {
             subjectRepository.deleteById(id);
             System.out.println("✅ Đã xóa môn học ID: " + id);
 
-            // 🆕 TỰ ĐỘNG TÍNH LẠI GPA HỌC KỲ
+            // TỰ ĐỘNG TÍNH LẠI GPA HỌC KỲ
             if (semesterId != null) {
                 System.out.println("🔄 Tính lại GPA cho học kỳ sau khi xóa môn học: " + semesterId);
                 semesterGpaService.calculateSemesterGpa(semesterId);
