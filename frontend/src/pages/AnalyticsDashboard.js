@@ -25,7 +25,7 @@ ChartJS.register(
   Legend
 );
 
-const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { // 🆕 THÊM refreshTrigger prop
+const AnalyticsDashboard = ({ currentUser, refreshTrigger }) => { 
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 

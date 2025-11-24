@@ -1,9 +1,8 @@
 import axios from 'axios';
 
-// === Cấu hình chung ===
 const API_BASE_URL = 'http://localhost:8080/api';
 
-// 🔧 Tạo instance axios chung
+//Tạo instance axios chung
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -11,7 +10,7 @@ const api = axios.create({
   },
 });
 
-// ✅ Tự động gắn token (nếu có) vào mọi request
+// Tự động gắn token (nếu có) vào mọi request
 api.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token');
@@ -81,13 +80,13 @@ export const documentAPI = {
   getBookmarkedDocuments: (userId) => api.get(`/documents/user/${userId}/bookmarked`),
   searchDocuments: (userId, keyword) =>
     api.get(`/documents/user/${userId}/search?keyword=${keyword}`),
-
+  // upload
   uploadDocument: (formData) =>
     api.post('/documents/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
-  // ✅✅✅ HÀM MỚI ĐỂ DOWNLOAD (SỬA LỖI 403) ✅✅✅
+    //download
   downloadDocument: async (documentId, userId, fileName) => {
     try {
       const response = await api.get(`/documents/${documentId}/download?userId=${userId}`, {

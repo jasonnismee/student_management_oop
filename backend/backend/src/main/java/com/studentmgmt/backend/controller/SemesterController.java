@@ -36,7 +36,7 @@ public class SemesterController {
     @Autowired
     private SemesterGpaService semesterGpaService; // THÊM Autowired service
 
-    // 🧩 Lấy danh sách học kỳ của user
+    //  Lấy danh sách học kỳ của user
     @GetMapping
     public ResponseEntity<?> getUserSemesters(@RequestParam Long userId) {
         try {
@@ -51,7 +51,7 @@ public class SemesterController {
         }
     }
 
-    // 🧩 Lấy thông tin chi tiết một học kỳ
+    // Lấy thông tin chi tiết một học kỳ
     @GetMapping("/{id}")
     public ResponseEntity<?> getSemesterById(@PathVariable Long id, @RequestParam Long userId) {
         try {
@@ -69,7 +69,7 @@ public class SemesterController {
         }
     }
 
-    // 🧩 Tạo học kỳ mới
+    //  Tạo học kỳ mới
     @PostMapping
     public ResponseEntity<?> createSemester(@RequestBody Map<String, Object> request) {
         try {
@@ -135,7 +135,7 @@ public class SemesterController {
         }
     }
 
-    // 🧩 Xóa học kỳ
+    //  Xóa học kỳ
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSemester(@PathVariable Long id, @RequestParam Long userId) {
         try {
@@ -153,11 +153,9 @@ public class SemesterController {
         }
     }
 
-    // ==============================
-    // 🔄 API TÍNH TOÁN GPA TỰ ĐỘNG (GIỐNG GRADE CONTROLLER)
-    // ==============================
 
-    // 🆕 API: Tính toán và cập nhật GPA cho một học kỳ (tự động)
+    // API TÍNH TOÁN GPA TỰ ĐỘNG (GIỐNG GRADE CONTROLLER)
+    // API: Tính toán và cập nhật GPA cho một học kỳ (tự động)
     @PostMapping("/{id}/calculate-gpa")
     public ResponseEntity<?> calculateSemesterGpa(@PathVariable Long id, @RequestParam Long userId) {
         try {
@@ -183,7 +181,7 @@ public class SemesterController {
         }
     }
 
-    // 🆕 API: Tính toán GPA cho tất cả học kỳ của user (tự động)
+    // API: Tính toán GPA cho tất cả học kỳ của user (tự động)
     @PostMapping("/calculate-all-gpa")
     public ResponseEntity<?> calculateAllSemestersGpa(@RequestParam Long userId) {
         try {
@@ -214,7 +212,7 @@ public class SemesterController {
         }
     }
 
-    // 🆕 API: Tự động tính lại GPA khi có thay đổi điểm (gọi từ GradeController)
+    // API: Tự động tính lại GPA khi có thay đổi điểm (gọi từ GradeController)
     @PostMapping("/recalculate-on-grade-change")
     public ResponseEntity<?> recalculateOnGradeChange(@RequestBody Map<String, Object> request) {
         try {
@@ -239,7 +237,7 @@ public class SemesterController {
         }
     }
 
-    // 🆕 API: Cập nhật GPA thủ công (nếu cần)
+    // API: Cập nhật GPA thủ công (nếu cần)
     @PostMapping("/{id}/update-gpa")
     public ResponseEntity<?> updateSemesterGpa(
             @PathVariable Long id, 
@@ -285,7 +283,7 @@ public class SemesterController {
         }
     }
 
-    // 🆕 API: Lấy thông tin GPA của học kỳ
+    // API: Lấy thông tin GPA của học kỳ
     @GetMapping("/{id}/gpa")
     public ResponseEntity<?> getSemesterGpa(@PathVariable Long id, @RequestParam Long userId) {
         try {
@@ -310,7 +308,7 @@ public class SemesterController {
         }
     }
 
-    // 🆕 API: Cập nhật GPA cho tất cả học kỳ cũ (giống update-all-avg trong GradeController)
+    //  API: Cập nhật GPA cho tất cả học kỳ cũ (giống update-all-avg trong GradeController)
     @PostMapping("/update-all-gpa")
     public ResponseEntity<?> updateAllSemestersGpa(@RequestParam Long userId) {
         try {
@@ -352,7 +350,7 @@ public class SemesterController {
         }
     }
 
-    // 🧩 Helper method để parse userId từ nhiều kiểu dữ liệu
+    //  Helper method để parse userId từ nhiều kiểu dữ liệu
     private Long parseUserId(Object userIdValue) {
         try {
             if (userIdValue instanceof Integer) {

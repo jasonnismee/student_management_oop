@@ -61,24 +61,24 @@ const DocumentManagement = ({ currentUser }) => {
     }
   }, [currentUser.userId]);
 
-  // Filter documents dựa trên các điều kiện
+  // Lọc documents dựa trên các điều kiện
  const filterDocuments = () => {
     let filtered = [...allDocuments];
 
     console.log('--- BỘ LỌC ĐANG CHẠY ---');
     console.log('Đang lọc với trạng thái bookmarked là:', isBookmarkedFilter);
 
-    // Filter theo bookmark
+    // Lọc theo đánh dấu
     if (isBookmarkedFilter) {
-      filtered = filtered.filter(doc => doc.bookmarked); // Phải là doc.bookmarked nhé!
+      filtered = filtered.filter(doc => doc.bookmarked);
     }
 
-    // Filter theo môn học
+    // Lọc theo môn học đã liên kết
     if (selectedSubject) {
       filtered = filtered.filter(doc => doc.subjectId === parseInt(selectedSubject));
     }
 
-    // Filter theo định dạng
+    // Lọc theo định dạng file
     if (selectedFormat) {
       filtered = filtered.filter(doc => {
         const fileExtension = doc.fileName?.split('.').pop()?.toLowerCase();
@@ -86,7 +86,7 @@ const DocumentManagement = ({ currentUser }) => {
       });
     }
 
-    // Filter theo search term
+    // Lọc theo tìm kiếm
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(doc => 
@@ -107,7 +107,7 @@ const DocumentManagement = ({ currentUser }) => {
     }
   }, [currentUser, loadSubjects, loadAllDocuments]);
 
-  // Áp dụng filter khi có thay đổi
+
 // Áp dụng filter khi có thay đổi
   useEffect(() => {
     console.log('USE EFFECT (MỚI) ĐANG CHẠY');
@@ -136,7 +136,7 @@ const DocumentManagement = ({ currentUser }) => {
     formData.append('file', file);
     formData.append('userId', currentUser.userId);
     
-    // Sử dụng uploadSubject thay vì selectedSubject
+    
     if (uploadSubject) {
       formData.append('subjectId', uploadSubject);
     }
@@ -163,31 +163,31 @@ const DocumentManagement = ({ currentUser }) => {
     }
   };
 
-  // DÁN HÀM NÀY VÀO LẠI (nếu nó bị mất)
+  // Hàm xử lý download
   const handleDownload = async (documentId, fileName) => {
     try {
       console.log("Đang download:", fileName);
       
-      // 1. Gọi API bằng axios (đã có trong documentAPI)
+      // Gọi API bằng axios (đã có trong documentAPI)
       const response = await documentAPI.downloadDocument(documentId, currentUser.userId);
   
-      // 2. Tạo một Blob từ dữ liệu file
+      // Tạo một Blob từ dữ liệu file
       const blob = new Blob([response.data], { type: response.headers['content-type'] });
   
-      // 3. Tạo một URL tạm thời trong trình duyệt
+      // Tạo một URL tạm thời trong trình duyệt
       const downloadUrl = window.URL.createObjectURL(blob);
   
-      // 4. Tạo một thẻ <a> "ảo"
+      // Tạo một thẻ <a> "ảo"
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.setAttribute('download', fileName);
   
-      // 5. Thêm thẻ vào trang, "click" nó, rồi gỡ đi
+      //Thêm thẻ vào trang, "click" nó, rồi gỡ đi
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
   
-      // 6. Xóa URL tạm thời
+      //Xóa URL tạm thời
       window.URL.revokeObjectURL(downloadUrl);
   
     } catch (error) {
@@ -196,17 +196,19 @@ const DocumentManagement = ({ currentUser }) => {
     }
   };
 
+
+// Hàm xóa tài liệu
   const handleDelete = async (documentId) => {
     // Tìm tài liệu trong kho gốc để kiểm tra
     const docToDelete = allDocuments.find(doc => doc.id === documentId);
     
-    // Nếu tìm thấy và nó đã được bookmark
+    // Nếu tìm thấy và nó đã được đánh dấu thì sẽ không thể xóa
     if (docToDelete && docToDelete.bookmarked) {
         alert('Tài liệu này đã được đánh dấu! Vui lòng bỏ đánh dấu trước khi xóa.');
         return; // Dừng hàm, không làm gì cả
     }
 
-
+    // Xóa tài liệu không bị đánh dấu
     if (window.confirm('Bạn có chắc muốn xóa tài liệu này? Hành động này không thể hoàn tác.')) {
       try {
         await documentAPI.deleteDocument(documentId, currentUser.userId);
@@ -218,28 +220,19 @@ const DocumentManagement = ({ currentUser }) => {
     }
   };
 
- /* const handleToggleBookmark = async (documentId) => {
-    try {
-      await documentAPI.toggleBookmark(documentId, currentUser.userId);
-      await loadAllDocuments(); // Reload để cập nhật trạng thái bookmark
-    } catch (error) {
-      alert('Lỗi khi đánh dấu tài liệu: ' + error.response?.data?.message);
-    }
-  };*/
-
+// Hàm xử lý đánh dấu tài liệu
 const handleToggleBookmark = async (documentId) => {
     try {
-      // 1. Gọi API và chờ kết quả trả về
-      // (Backend sẽ trả về trạng thái bookmark MỚI, ví dụ: { "bookmarked": true })
+      // Gọi API và chờ kết quả trả về
+      // Backend sẽ trả về trạng thái bookmark MỚI, ví dụ: "bookmarked": true 
       const response = await documentAPI.toggleBookmark(documentId, currentUser.userId);
       
-      // 2. Lấy trạng thái bookmark mới từ kết quả
+      // Lấy trạng thái bookmark mới từ kết quả
       const newBookmarkedStatus = response.data.bookmarked;
 
-      // 3. Cập nhật "kho gốc" (allDocuments) ngay tại frontend
-      //    Chúng ta không cần gọi lại loadAllDocuments()
+      // Cập nhật allDocuments ngay tại frontend
       setAllDocuments(prevMasterList => {
-        // Dùng .map() để tạo ra một mảng MỚI
+        // Dùng .map() để tạo ra một mảng mới
         return prevMasterList.map(doc => {
           // Nếu tìm thấy đúng tài liệu vừa bấm
           if (doc.id === documentId) {
@@ -251,8 +244,6 @@ const handleToggleBookmark = async (documentId) => {
         });
       });
       
-      // 4. Vì allDocuments thay đổi, useEffect sẽ tự động chạy
-      //    hàm filterDocuments() và cập nhật lại giao diện.
 
     } catch (error) {
       alert('Lỗi khi đánh dấu tài liệu: ' + error.response?.data?.message);

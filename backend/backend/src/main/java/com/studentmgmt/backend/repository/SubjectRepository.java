@@ -22,20 +22,20 @@ public class SubjectRepository {
     private JdbcTemplate jdbcTemplate;
 
 
-    // ✅ THÊM METHOD NÀY: Tìm môn học theo ID
+    //  Tìm môn học theo ID
     public Subject findById(Long id) {
         String sql = "SELECT * FROM subjects WHERE id = ?";
         List<Subject> subjects = jdbcTemplate.query(sql, new SubjectRowMapper(), id);
         return subjects.isEmpty() ? null : subjects.get(0);
     }
 
-    // ✅ Lấy môn học theo học kỳ
+    //  Lấy môn học theo học kỳ
     public List<Subject> findBySemesterId(Long semesterId) {
         String sql = "SELECT * FROM subjects WHERE semester_id = ?";
         return jdbcTemplate.query(sql, new Object[]{semesterId}, new SubjectRowMapper());
     }
 
-    // ✅ Lấy tất cả môn học của user
+    //  Lấy tất cả môn học của user
     public List<Subject> findByUserId(Long userId) {
         String sql = """
             SELECT s.* FROM subjects s
@@ -45,14 +45,14 @@ public class SubjectRepository {
         return jdbcTemplate.query(sql, new Object[]{userId}, new SubjectRowMapper());
     }
 
-    // ✅ Kiểm tra môn học có tồn tại không (dùng trong GradeController)
+    // Kiểm tra môn học có tồn tại không (dùng trong GradeController)
     public boolean existsById(Long subjectId) {
         String sql = "SELECT COUNT(*) FROM subjects WHERE id = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, subjectId);
         return count != null && count > 0;
     }
 
-    // ✅ Kiểm tra môn học có thuộc user không
+    //  Kiểm tra môn học có thuộc user không
     public boolean existsByIdAndUserId(Long subjectId, Long userId) {
         String sql = """
             SELECT COUNT(*) FROM subjects s
@@ -63,7 +63,7 @@ public class SubjectRepository {
         return count != null && count > 0;
     }
 
-    // ✅ THÊM METHOD NÀY: Kiểm tra mã môn học trùng lặp (không phân biệt hoa/thường)
+    //  Kiểm tra mã môn học trùng lặp (không phân biệt hoa/thường)
     public boolean existsBySubjectCode(String subjectCode) {
         // Bỏ qua nếu subjectCode rỗng hoặc null (vì đây là trường tùy chọn)
 
@@ -71,13 +71,13 @@ public class SubjectRepository {
             return false;
         }
         
-        // Dùng LOWER() để "INT1001" và "int1001" được coi là trùng nhau
+        // "INT1001" và "int1001" được coi là trùng nhau
         String sql = "SELECT COUNT(*) FROM subjects WHERE LOWER(subject_code) = LOWER(?)";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, subjectCode.trim());
         return count != null && count > 0;
     }
 
-    // ✅ Lưu môn học mới
+    // Lưu môn học mới
     public Subject save(Subject subject) {
         String sql = "INSERT INTO subjects (name, credits, subject_code, semester_id, created_at) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -96,20 +96,20 @@ public class SubjectRepository {
         return subject;
     }
 
-    // ✅ Xóa môn học
+    // Xóa môn học
     public void deleteById(Long id) {
         String sql = "DELETE FROM subjects WHERE id = ?";
         jdbcTemplate.update(sql, id);
     }
 
 
-    // 🆕 THÊM METHOD: Xóa tất cả môn học của một học kỳ
+    // Xóa tất cả môn học của một học kỳ
     public void deleteBySemesterId(Long semesterId) {
         String sql = "DELETE FROM subjects WHERE semester_id = ?";
         jdbcTemplate.update(sql, semesterId);
     }
 
-    // ✅ RowMapper
+    //  RowMapper
     private static class SubjectRowMapper implements RowMapper<Subject> {
         @Override
         public Subject mapRow(ResultSet rs, int rowNum) throws SQLException {

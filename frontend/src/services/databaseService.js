@@ -7,7 +7,7 @@ const getAuthHeaders = () => {
     return token ? { 'Authorization': `Bearer ${token}` } : {};
 };
 
-// 🎯 Lấy tất cả học kỳ của user - ĐÃ SỬA URL
+//  Lấy tất cả học kỳ của user - ĐÃ SỬA URL
 export const getSemesters = async (userId) => {
     try {
         const response = await axios.get(
@@ -21,7 +21,7 @@ export const getSemesters = async (userId) => {
     }
 };
 
-// 🎯 Lấy môn học theo học kỳ - KIỂM TRA URL NÀY
+// Lấy môn học theo học kỳ - KIỂM TRA URL NÀY
 export const getSubjectsBySemester = async (semesterId) => {
     try {
         const response = await axios.get(
@@ -35,7 +35,7 @@ export const getSubjectsBySemester = async (semesterId) => {
     }
 };
 
-// 🎯 Lấy điểm của môn học
+//  Lấy điểm của môn học
 export const getSubjectGrades = async (subjectId) => {
     try {
         const response = await axios.get(
@@ -49,7 +49,7 @@ export const getSubjectGrades = async (subjectId) => {
     }
 };
 
-// 🎯 Lấy thông tin user
+//  Lấy thông tin user
 export const getUserInfo = async (userId) => {
     try {
         const response = await axios.get(
@@ -63,7 +63,7 @@ export const getUserInfo = async (userId) => {
     }
 };
 
-// 🎯 Lấy tất cả dữ liệu học tập của user
+//  Lấy tất cả dữ liệu học tập của user
 export const getAllStudentData = async (userId) => {
     try {
         const semesters = await getSemesters(userId);
